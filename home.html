@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="resources.css">
+
+  <title>Inbox</title>
+  <style>
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Inbox</h1>
+    <div>johnDoe@email.com</div>
+  </header>
+
+  <div class="sidebar">
+    <button>Compose</button>
+    <ul>
+      <li><strong>Inbox</strong></li>
+      <li>Sent</li>
+      <li>Drafts</li>
+      <li>Trash</li>
+    </ul>
+  </div>
+
+  <div class="inbox" id="inbox"></div>
+
+  <script>
+    // Load JSON and render emails
+    fetch("emails.json")
+      .then(response => response.json())
+      .then(data => {
+        const inbox = document.getElementById("inbox");
+
+        data.forEach(email => {
+          const row = document.createElement("div");
+          row.className = "email";
+          row.innerHTML = `
+            <input type="checkbox">
+            <div class="sender">${email.sender}</div>
+            <div class="subject">${email.subject}</div>
+            <div class="time">${email.time}</div>
+          `;
+          inbox.appendChild(row);
+        });
+      })
+      .catch(err => console.error("Error loading emails:", err));
+  </script>
+</body>
+</html>
