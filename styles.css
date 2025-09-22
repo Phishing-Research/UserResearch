@@ -58,7 +58,6 @@ body {
   }
 
   .inbox {
-    margin-left: 220px;
     padding: 0;
     background: white;
     border-left: 1px solid var(--boarderline);
@@ -84,6 +83,7 @@ body {
   .email .sender {
     font-weight: bold;
     width: 180px;
+    margin-top: 10px;
     flex-shrink: 0;
   }
 
@@ -98,3 +98,36 @@ body {
     margin-left: 10px;
     flex-shrink: 0;
   }
+
+  .main { 
+    margin-left: 0px; 
+    display: flex; 
+    height: calc(100vh - 60px); 
+  }
+  
+  .inbox { 
+    flex: 1; 
+    background: #fff; 
+    border-right: 1px solid #ddd; 
+    overflow-y: auto; 
+  }
+  
+  .reading-pane { 
+    flex: 2; 
+    padding: 20px; 
+    background: #fafafa; 
+    overflow-y: auto; 
+  }
+
+
+  /* Reading pane */
+  .reading-pane h2 { 
+    margin-top: 0; 
+  }
+  
+  .reading-pane .meta { 
+    font-size: 0.9em; 
+    color: #555; 
+    margin-bottom: 15px; 
+  }
+  

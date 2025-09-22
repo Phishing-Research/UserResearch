@@ -4,12 +4,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+  <!-- External CSS -->
   <link rel="stylesheet" href="styles.css">
+ <!--<link rel="stylesheet" href="email.css">-->
   <link rel="stylesheet" href="resources.css">
 
   <title>Inbox</title>
-  <style>
-  </style>
 </head>
 <body>
   <header>
@@ -27,7 +27,12 @@
     </ul>
   </div>
 
-  <div class="inbox" id="inbox"></div>
+  <div class="main">
+    <div class="inbox" id="inbox"></div>
+    <div class="reading-pane" id="readingPane">
+      <p>Select an email to read</p>
+    </div>
+  </div>
 
   <script>
     // Load JSON and render emails
@@ -35,16 +40,32 @@
       .then(response => response.json())
       .then(data => {
         const inbox = document.getElementById("inbox");
+        const readingPane = document.getElementById("readingPane");
 
         data.forEach(email => {
           const row = document.createElement("div");
           row.className = "email";
+
+          ////////////////checkbox needs modified to a read/unread////////////////
           row.innerHTML = `
-            <input type="checkbox">
+            <input type="checkbox"> 
             <div class="sender">${email.sender}</div>
             <div class="subject">${email.subject}</div>
             <div class="time">${email.time}</div>
           `;
+
+          // Click to open email
+          row.addEventListener("click", (e) => {
+            // Avoid checkbox clicks opening the email
+            if (e.target.tagName.toLowerCase() === "input") return;
+
+            readingPane.innerHTML = `
+              <h2>${email.subject}</h2>
+              <div class="meta">From: ${email.sender} | ${email.time}</div>
+              <p>${email.snippet}</p>
+            `;
+          });
+
           inbox.appendChild(row);
         });
       })
