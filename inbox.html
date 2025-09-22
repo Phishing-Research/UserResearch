@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- External CSS -->
+  <link rel="stylesheet" href="styles.css">
+ <!--<link rel="stylesheet" href="email.css">-->
+  <link rel="stylesheet" href="resources.css">
+
+  <title>Inbox</title>
+</head>
+<body>
+  <header>
+    <h1>Inbox</h1>
+    <div>johnDoe@email.com</div>
+  </header>
+
+  <div class="sidebar">
+    <button>Compose</button>
+    <ul>
+      <li><strong>Inbox</strong></li>
+      <li>Sent</li>
+      <li>Drafts</li>
+      <li>Trash</li>
+    </ul>
+  </div>
+
+  <div class="main">
+    <div class="inbox" id="inbox"></div>
+    <div class="reading-pane" id="readingPane">
+      <p>Select an email to read</p>
+    </div>
+  </div>
+
+  <script>
+    // Load JSON and render emails (expects: id, sender, subject, snippet, time, [senderEmail])
+    fetch("emails.json")
+            .then(res => res.json())
+            .then(data => {
+              const inbox = document.getElementById("inbox");
+              const readingPane = document.getElementById("readingPane");
+
+              data.forEach(email => {
+                const row = document.createElement("div");
+                row.className = "email";
+
+                const senderText = email.sender + (email.senderEmail ? ` (${email.senderEmail})` : "");
+
+                row.innerHTML = `
+          <input type="checkbox" aria-label="mark read/unread">
+          <div class="sender">${senderText}</div>
+          <div class="subject">${email.subject}</div>
+          <div class="time">${email.time}</div>
+        `;
+
+                row.addEventListener("click", (e) => {
+                  if (e.target.tagName.toLowerCase() === "input") return; // don't open when clicking checkbox
+                  readingPane.innerHTML = `
+            <h2>${email.subject}</h2>
+            <div class="meta">From: ${senderText} | ${email.time}</div>
+            <p>${email.snippet}</p>
+          `;
+                });
+
+                inbox.appendChild(row);
+              });
+            })
+            .catch(err => console.error("Error loading emails:", err));
+  </script>
+</body>
+</html>

@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Welcome</title>
+  <link rel="stylesheet" href="startstyles.css">
+  <style>
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #3f51b5, #5c6bc0);
+      color: white;
+      text-align: center;
+    }
+    .container {
+      background: rgba(255,255,255,0.1);
+      padding: 40px;
+      border-radius: 15px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+    }
+    h1 {
+      margin-bottom: 20px;
+      font-size: 2rem;
+    }
+    p {
+      margin-bottom: 30px;
+      font-size: 1rem;
+    }
+    .open-btn {
+      background: #ffca28;
+      color: #333;
+      padding: 12px 24px;
+      font-size: 1rem;
+      font-weight: bold;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+    .open-btn:hover {
+      background: #ffb300;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Welcome to Your Mailbox</h1>
+    <p>Click below to open your inbox and start the timer.</p>
+    <!-- will need to add a timer to the button to track users-->
+    <button class="open-btn" onclick="location.href='inbox.html'">Open Inbox</button>
+  </div>
+</body>
+</html>

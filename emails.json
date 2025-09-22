@@ -1,0 +1,34 @@
+[
+  {
+    "id": 1,
+    "sender": "Alice",
+    "senderEmail": "alice@example.com",
+    "subject": "Meeting rescheduled to 3 PM",
+    "snippet": "Just letting you know the meeting has been pushed back.",
+    "time": "10:32 AM"
+  },
+  {
+    "id": 2,
+    "sender": "Bob",
+    "senderEmail": "bob@example.com",
+    "subject": "Don’t forget the project deadline",
+    "snippet": "The final draft is due this Friday, make sure to submit on time.",
+    "time": "9:15 AM"
+  },
+  {
+    "id": 3,
+    "sender": "Carol",
+    "senderEmail": "carol@example.com",
+    "subject": "Dinner plans?",
+    "snippet": "Are we still on for Saturday evening?",
+    "time": "Yesterday"
+  },
+  {
+    "id": 4,
+    "sender": "System",
+    "senderEmail": "no-reply@example.com",
+    "subject": "Password reset confirmation",
+    "snippet": "Your password has been successfully reset.",
+    "time": "2 days ago"
+  }
+]
