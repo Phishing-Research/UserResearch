@@ -35,41 +35,39 @@
   </div>
 
   <script>
-    // Load JSON and render emails
+    // Load JSON and render emails (expects: id, sender, subject, snippet, time, [senderEmail])
     fetch("emails.json")
-      .then(response => response.json())
-      .then(data => {
-        const inbox = document.getElementById("inbox");
-        const readingPane = document.getElementById("readingPane");
+            .then(res => res.json())
+            .then(data => {
+              const inbox = document.getElementById("inbox");
+              const readingPane = document.getElementById("readingPane");
 
-        data.forEach(email => {
-          const row = document.createElement("div");
-          row.className = "email";
+              data.forEach(email => {
+                const row = document.createElement("div");
+                row.className = "email";
 
-          ////////////////checkbox needs modified to a read/unread////////////////
-          row.innerHTML = `
-            <input type="checkbox"> 
-            <div class="sender">${email.sender}</div>
-            <div class="subject">${email.subject}</div>
-            <div class="time">${email.time}</div>
+                const senderText = email.sender + (email.senderEmail ? ` (${email.senderEmail})` : "");
+
+                row.innerHTML = `
+          <input type="checkbox" aria-label="mark read/unread">
+          <div class="sender">${senderText}</div>
+          <div class="subject">${email.subject}</div>
+          <div class="time">${email.time}</div>
+        `;
+
+                row.addEventListener("click", (e) => {
+                  if (e.target.tagName.toLowerCase() === "input") return; // don't open when clicking checkbox
+                  readingPane.innerHTML = `
+            <h2>${email.subject}</h2>
+            <div class="meta">From: ${senderText} | ${email.time}</div>
+            <p>${email.snippet}</p>
           `;
+                });
 
-          // Click to open email
-          row.addEventListener("click", (e) => {
-            // Avoid checkbox clicks opening the email
-            if (e.target.tagName.toLowerCase() === "input") return;
-
-            readingPane.innerHTML = `
-              <h2>${email.subject}</h2>
-              <div class="meta">From: ${email.sender} | ${email.time}</div>
-              <p>${email.snippet}</p>
-            `;
-          });
-
-          inbox.appendChild(row);
-        });
-      })
-      .catch(err => console.error("Error loading emails:", err));
+                inbox.appendChild(row);
+              });
+            })
+            .catch(err => console.error("Error loading emails:", err));
   </script>
 </body>
 </html>
