@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Results</title>
+  <style>
+    body {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #3f51b5, #5c6bc0);
+      color: white;
+      text-align: center;
+    }
+    .container {
+      background: rgba(255,255,255,0.1);
+      padding: 40px;
+      border-radius: 15px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+    }
+    h1 {
+      margin-bottom: 20px;
+      font-size: 2rem;
+    }
+    .time-display {
+      font-size: 1.5rem;
+      margin-bottom: 30px;
+    }
+  </style>
+</head>
+<body>
+    <div class="container">
+    <h1>Well Done!</h1>
+    <div class="time-display" id="timeDisplay">Calculating...</div>
+    <div class="phishing-stats" id="phishingStats"></div>
+  </div>
+  
+  <script>
+    // Display time
+    const startTime = parseInt(localStorage.getItem("startTime"));
+    const stopTime = parseInt(localStorage.getItem("stopTime"));
+    function formatTime(ms) {
+      const totalSeconds = Math.floor(ms / 1000);
+      const hours = Math.floor(totalSeconds / 3600);
+      const minutes = Math.floor((totalSeconds % 3600) / 60);
+      const seconds = totalSeconds % 60;
+      return `${hours > 0 ? hours + 'h ' : ''}${minutes}m ${seconds}s`;
+    }
+    if (startTime && stopTime) {
+      const elapsed = stopTime - startTime;
+      document.getElementById("timeDisplay").textContent = `Total Time: ${formatTime(elapsed)}`;
+    }
+  
+    // Display phishing stats
+    const stats = JSON.parse(localStorage.getItem("phishingStats"));
+    if (stats) {
+      const { TP, TN, FP, FN } = stats;
+      //tp = true positive (correctly identified as phising)
+      //tn = true negitive (correctly identified as legitment)
+      //fp = false negitive (incorrectly identified as legitment)
+      //fn = false negitive (incorrectly identified as legitment)
+      const total = TP + TN + FP + FN;
+      const accuracy = ((TP + TN) / total * 100).toFixed(1);
+      document.getElementById("phishingStats").innerHTML = `
+      <h2>Phishing Detection</h2>
+      <p>True Positives: ${TP}</p>
+      <p>True Negatives: ${TN}</p>
+      <p>False Positives: ${FP}</p>
+      <p>False Negatives: ${FN}</p>
+        <p><strong>Accuracy: ${accuracy}%</strong></p>
+      `;
+    }
+  </script>
+  </body>
+</html>
