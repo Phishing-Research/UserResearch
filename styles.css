@@ -56,6 +56,14 @@ body {
     cursor: pointer;
     color: #333;
   }
+/* Make unread emails' sender name blue */
+.sender.unread {
+  color: blue;
+  font-weight: bold;
+}
+.sender {
+  color: black
+}
 
   .inbox {
     padding: 0;

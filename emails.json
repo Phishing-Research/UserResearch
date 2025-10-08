@@ -1,34 +1,152 @@
 [
   {
     "id": 1,
-    "sender": "Alice",
-    "senderEmail": "alice@example.com",
-    "subject": "Meeting rescheduled to 3 PM",
-    "snippet": "Just letting you know the meeting has been pushed back.",
-    "time": "10:32 AM"
+    "sender": "Amazon Support",
+    "senderEmail": "support@amazon.com",
+    "subject": "Verify Your Account",
+    "snippet": "Your account has been compromised. Please login immediately.",
+    "time": "08:15 AM",
+    "attachment": null,
+    "isPhishing": true
   },
   {
     "id": 2,
-    "sender": "Bob",
-    "senderEmail": "bob@example.com",
-    "subject": "Don’t forget the project deadline",
-    "snippet": "The final draft is due this Friday, make sure to submit on time.",
-    "time": "9:15 AM"
+    "sender": "John Doe",
+    "senderEmail": "johndoe@gmail.com",
+    "subject": "Lunch Tomorrow?",
+    "snippet": "Hey, are we still on for lunch tomorrow?",
+    "time": "09:30 AM",
+    "attachment": null,
+    "isPhishing": false
   },
   {
     "id": 3,
-    "sender": "Carol",
-    "senderEmail": "carol@example.com",
-    "subject": "Dinner plans?",
-    "snippet": "Are we still on for Saturday evening?",
-    "time": "Yesterday"
+    "sender": "PayPal",
+    "senderEmail": "service@paypal.com",
+    "subject": "Payment Received",
+    "snippet": "You have received $200. Click to view details.",
+    "time": "10:00 AM",
+    "attachment": null,
+    "isPhishing": true
   },
   {
     "id": 4,
-    "sender": "System",
-    "senderEmail": "no-reply@example.com",
-    "subject": "Password reset confirmation",
-    "snippet": "Your password has been successfully reset.",
-    "time": "2 days ago"
+    "sender": "HR Department",
+    "senderEmail": "hr@company.com",
+    "subject": "Updated Benefits Information",
+    "snippet": "Please review the updated benefits package for this year.",
+    "time": "10:45 AM",
+    "attachment": "Benefits.pdf",
+    "isPhishing": false
+  },
+  {
+    "id": 5,
+    "sender": "Netflix",
+    "senderEmail": "support@netflix.com",
+    "subject": "Account Suspended",
+    "snippet": "We detected unusual activity. Please login to restore access.",
+    "time": "11:15 AM",
+    "attachment": null,
+    "isPhishing": true
+  },
+  {
+    "id": 6,
+    "sender": "Alice Smith",
+    "senderEmail": "alice.smith@yahoo.com",
+    "subject": "Meeting Notes",
+    "snippet": "Attached are the notes from today's meeting.",
+    "time": "12:00 PM",
+    "attachment": "MeetingNotes.docx",
+    "isPhishing": false
+  },
+  {
+    "id": 7,
+    "sender": "LinkedIn",
+    "senderEmail": "security@linkedin.com",
+    "subject": "Suspicious Login Attempt",
+    "snippet": "We noticed a login attempt from an unknown device. Please verify.",
+    "time": "01:00 PM",
+    "attachment": null,
+    "isPhishing": true
+  },
+  {
+    "id": 8,
+    "sender": "Bob Johnson",
+    "senderEmail": "bob.johnson@gmail.com",
+    "subject": "Project Update",
+    "snippet": "Here is the latest update on the project deliverables.",
+    "time": "01:30 PM",
+    "attachment": null,
+    "isPhishing": false
+  },
+  {
+    "id": 9,
+    "sender": "Bank of America",
+    "senderEmail": "alerts@bofa.com",
+    "subject": "Confirm Your Transaction",
+    "snippet": "A transaction was flagged. Click here to confirm or deny it.",
+    "time": "02:15 PM",
+    "attachment": null,
+    "isPhishing": true
+  },
+  {
+    "id": 10,
+    "sender": "Charlie Green",
+    "senderEmail": "charlie.green@hotmail.com",
+    "subject": "Vacation Photos",
+    "snippet": "Check out the photos from our recent trip!",
+    "time": "03:00 PM",
+    "attachment": "Vacation.zip",
+    "isPhishing": false
+  },
+  {
+    "id": 11,
+    "sender": "Dropbox",
+    "senderEmail": "noreply@dropbox.com",
+    "subject": "File Share Request",
+    "snippet": "Someone has shared a file with you. Click here to access.",
+    "time": "03:30 PM",
+    "attachment": null,
+    "isPhishing": true
+  },
+  {
+    "id": 12,
+    "sender": "Emily Davis",
+    "senderEmail": "emily.davis@gmail.com",
+    "subject": "Happy Birthday!",
+    "snippet": "Wishing you a wonderful birthday. Let's celebrate soon!",
+    "time": "04:00 PM",
+    "attachment": null,
+    "isPhishing": false
+  },
+  {
+    "id": 13,
+    "sender": "IRS",
+    "senderEmail": "notice@irs.gov",
+    "subject": "Tax Payment Required",
+    "snippet": "Your taxes are overdue. Pay immediately to avoid penalties.",
+    "time": "04:30 PM",
+    "attachment": null,
+    "isPhishing": true
+  },
+  {
+    "id": 14,
+    "sender": "Marketing Team",
+    "senderEmail": "marketing@company.com",
+    "subject": "Monthly Newsletter",
+    "snippet": "Check out the latest news and updates from our company.",
+    "time": "05:00 PM",
+    "attachment": null,
+    "isPhishing": false
+  },
+  {
+    "id": 15,
+    "sender": "UPS",
+    "senderEmail": "tracking@ups.com",
+    "subject": "Delivery Issue",
+    "snippet": "Your package delivery could not be completed. Click to resolve.",
+    "time": "05:45 PM",
+    "attachment": null,
+    "isPhishing": true
   }
 ]

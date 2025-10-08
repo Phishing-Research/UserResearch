@@ -4,10 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <!-- External CSS -->
   <link rel="stylesheet" href="styles.css">
- <!--<link rel="stylesheet" href="email.css">-->
-  <link rel="stylesheet" href="resources.css">
 
   <title>Inbox</title>
 </head>
@@ -20,10 +17,9 @@
   <div class="sidebar">
     <button>Compose</button>
     <ul>
-      <li><strong>Inbox</strong></li>
-      <li>Sent</li>
-      <li>Drafts</li>
-      <li>Trash</li>
+      <li data-folder="inbox"><strong>Inbox</strong></li>
+      <li data-folder="readlater">Read Later</li>
+      <li data-folder="trash">Trash</li>
     </ul>
   </div>
 
@@ -35,39 +31,234 @@
   </div>
 
   <script>
-    // Load JSON and render emails (expects: id, sender, subject, snippet, time, [senderEmail])
-    fetch("emails.json")
-            .then(res => res.json())
-            .then(data => {
-              const inbox = document.getElementById("inbox");
-              const readingPane = document.getElementById("readingPane");
+    let timerInterval;
+    let emailsData = { inbox: [], readlater: [], trash: [] };
+    let currentFolder = "inbox";
+  
+    // --- Stopwatch ---
+    function startStopwatch() {
+      const header = document.querySelector("header");
+      const stopwatchDisplay = document.createElement("div");
+      stopwatchDisplay.id = "stopwatch";
+      stopwatchDisplay.style.marginTop = "5px";
+      header.appendChild(stopwatchDisplay);
+  
+      const startTime = localStorage.getItem("startTime");
+      if (!startTime) return;
+  
+      timerInterval = setInterval(() => {
+        const now = Date.now();
+        const elapsed = now - startTime;
+        const seconds = Math.floor((elapsed / 1000) % 60);
+        const minutes = Math.floor((elapsed / (1000 * 60)) % 60);
+        const hours = Math.floor((elapsed / (1000 * 60 * 60)));
+  
+        stopwatchDisplay.textContent =
+          `${hours > 0 ? hours + ":" : ""}${minutes}:${seconds.toString().padStart(2, "0")}`;
+      }, 1000);
+    }
+  
+    function stopStopwatch() {
+      clearInterval(timerInterval);
+      const stopwatchDisplay = document.getElementById("stopwatch");
+      if (stopwatchDisplay) {
+        const stopTime = Date.now();
+        localStorage.setItem("stopTime", stopTime);
+  
+        const elapsed = stopTime - localStorage.getItem("startTime");
+        const seconds = Math.floor((elapsed / 1000) % 60);
+        const minutes = Math.floor((elapsed / (1000 * 60)) % 60);
+        const hours = Math.floor((elapsed / (1000 * 60 * 60)));
+  
+        stopwatchDisplay.textContent =
+          `Finished in ${hours > 0 ? hours + "h " : ""}${minutes}m ${seconds}s`;
+      }
+    }
+  
+    // --- Check if all emails are read ---
+    function checkAllRead() {
+  const unread = emailsData.inbox.some(email => !email.read);
+  const header = document.querySelector("header");
+  let doneBtn = document.getElementById("doneBtn");
 
-              data.forEach(email => {
-                const row = document.createElement("div");
-                row.className = "email";
+  if (!unread) {
+    if (!doneBtn) {
+      // Create Done button in the header
+      doneBtn = document.createElement("button");
+      doneBtn.id = "doneBtn";
+      doneBtn.textContent = "Done";
+      doneBtn.style.marginRight = "10px";
+      doneBtn.style.padding = "5px 15px";
+      doneBtn.style.fontSize = "1rem";
+      doneBtn.style.cursor = "pointer";
 
-                const senderText = email.sender + (email.senderEmail ? ` (${email.senderEmail})` : "");
+      // Insert Done button before the stopwatch
+      const stopwatch = document.getElementById("stopwatch");
+      if (stopwatch) {
+        header.insertBefore(doneBtn, stopwatch);
+      } else {
+        header.appendChild(doneBtn);
+      }
 
-                row.innerHTML = `
-          <input type="checkbox" aria-label="mark read/unread">
-          <div class="sender">${senderText}</div>
+      doneBtn.addEventListener("click", () => {
+        stopStopwatch();
+        calculatePhishingStats();
+        window.location.href = "results.html";
+        /*-----?possible code for function if we want it to email us the results?-------
+          stopStopwatch();
+          calculatePhishingStats();
+
+          const phishingStats = JSON.parse(localStorage.getItem("phishingStats"));
+          const startTime = parseInt(localStorage.getItem("startTime"));
+          const stopTime = parseInt(localStorage.getItem("stopTime"));
+          const elapsed = stopTime - startTime;
+
+          // Prepare email content
+          const subject = encodeURIComponent("User Email Test Results");
+          const body = encodeURIComponent(
+            `Total Time: ${Math.floor(elapsed/1000)} seconds\n\n` +
+            `Phishing Detection Stats:\n` +
+            `True Positives: ${phishingStats.TP}\n` +
+            `True Negatives: ${phishingStats.TN}\n` +
+            `False Positives: ${phishingStats.FP}\n` +
+            `False Negatives: ${phishingStats.FN}\n` +
+            `Accuracy: ${((phishingStats.TP + phishingStats.TN) / 
+              (phishingStats.TP + phishingStats.TN + phishingStats.FP + phishingStats.FN) * 100).toFixed(1)}%`
+          );
+
+          // Open default email client
+          window.location.href = `mailto:youremail@example.com?subject=${subject}&body=${body}`;
+
+          // Redirect to results page after email client opens
+          setTimeout(() => {
+            window.location.href = "results.html";
+          }, 500);
+        */
+      });
+    }
+  } else if (doneBtn) {
+    doneBtn.remove();
+  }
+
+  function calculatePhishingStats() {
+    const emails = emailsData.inbox.concat(emailsData.readlater, emailsData.trash);
+    let TP=0, TN=0, FP=0, FN=0;
+
+    emails.forEach(email => {
+      if (email.isPhishing && email.userMarkedPhishing) TP++;
+      else if (!email.isPhishing && email.userMarkedPhishing) FP++;
+      else if (email.isPhishing && !email.userMarkedPhishing) FN++;
+      else if (!email.isPhishing && !email.userMarkedPhishing) TN++;
+    });
+
+    localStorage.setItem("phishingStats", JSON.stringify({ TP, TN, FP, FN }));
+  }
+
+}
+
+    // --- Render a folder ---
+function renderFolder(folder) {
+          
+      currentFolder = folder;
+      const inbox = document.getElementById("inbox");
+      const readingPane = document.getElementById("readingPane");
+      inbox.innerHTML = "";
+      readingPane.innerHTML = "<p>Select an email to read</p>";
+
+      emailsData[folder].forEach((email, index) => {
+        const row = document.createElement("div");
+        row.className = "email";
+
+        const senderText = email.sender + (email.senderEmail ? ` (${email.senderEmail})` : "");
+        const senderClass = email.read ? "" : "unread";
+
+        // Include a clickable row (checkbox optional)
+        row.innerHTML = `
+          <div class="sender ${senderClass}">${senderText}</div>
           <div class="subject">${email.subject}</div>
           <div class="time">${email.time}</div>
         `;
 
-                row.addEventListener("click", (e) => {
-                  if (e.target.tagName.toLowerCase() === "input") return; // don't open when clicking checkbox
-                  readingPane.innerHTML = `
-            <h2>${email.subject}</h2>
-            <div class="meta">From: ${senderText} | ${email.time}</div>
-            <p>${email.snippet}</p>
-          `;
-                });
+        row.addEventListener("click", () => openEmail(email, index));
+        inbox.appendChild(row);
+      });
+    }
 
-                inbox.appendChild(row);
-              });
-            })
-            .catch(err => console.error("Error loading emails:", err));
+// Open email in reading pane
+function openEmail(email, index) {
+  email.read = true; // mark as read
+
+  // Update the sender class in the inbox list
+  const inbox = document.getElementById("inbox");
+  const emailRow = inbox.children[index];
+  if (emailRow) {
+    const senderDiv = emailRow.querySelector(".sender");
+    if (senderDiv) senderDiv.classList.remove("unread");
+  }
+
+  checkAllRead();
+
+  const readingPane = document.getElementById("readingPane");
+  readingPane.innerHTML = `
+    <div style="display:flex; justify-content:flex-end; gap:10px; margin-bottom:15px;">
+      <button id="readLaterBtn">📥 Read Later</button>
+      <button id="trashBtn">🗑️ Trash</button>
+    </div>
+    <h2>${email.subject}</h2>
+    <div class="meta">From: ${email.sender} ${email.senderEmail ? `(${email.senderEmail})` : ""} | ${email.time}</div>
+    <p>${email.snippet}</p>
+    ${email.attachment ? `<p><strong>Attachment:</strong> ${email.attachment}</p>` : ""}
+  `;
+  
+  document.getElementById("readLaterBtn").addEventListener("click", () => {
+    moveEmail(email, index, "readlater");
+  });
+  document.getElementById("trashBtn").addEventListener("click", () => {
+    email.userMarkedPhishing = true;
+    moveEmail(email, index, "trash");
+  });
+}
+
+// Move email to another folder and auto-select next
+function moveEmail(email, index, targetFolder) {
+  emailsData[currentFolder].splice(index, 1); // remove from current
+  emailsData[targetFolder].push(email);        // add to target
+
+  // Re-render folder
+  renderFolder(currentFolder);
+
+  // Auto-select next email if it exists
+  const nextEmail = emailsData[currentFolder][index] || emailsData[currentFolder][index - 1];
+  if (nextEmail) {
+    const nextIndex = emailsData[currentFolder].indexOf(nextEmail);
+    openEmail(nextEmail, nextIndex);
+  } else {
+    // No emails left
+    const readingPane = document.getElementById("readingPane");
+    readingPane.innerHTML = "<p>Select an email to read</p>";
+  }
+}
+
+    // --- Load emails ---
+    fetch("emails.json")
+      .then(res => res.json())
+      .then(data => {
+        // Mark all as unread initially
+        emailsData.inbox = data.map(e => ({ ...e, read: false, userMarkedPhishing: false }));
+        renderFolder("inbox");
+        startStopwatch();
+      })
+      .catch(err => console.error("Error loading emails:", err));
+  
+    // --- Sidebar switching ---
+    document.querySelectorAll(".sidebar li").forEach(li => {
+      li.addEventListener("click", () => {
+        document.querySelectorAll(".sidebar li").forEach(el => el.innerHTML = el.textContent);
+        li.innerHTML = `<strong>${li.textContent}</strong>`;
+        renderFolder(li.dataset.folder);
+      });
+    });
   </script>
+  
 </body>
 </html>
