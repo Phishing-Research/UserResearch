@@ -98,13 +98,16 @@ app.get('/api/ping-gen', async (_req, res) => {
 // --- prompt
 const SYSTEM_INSTRUCTIONS = `
 You are a phishing email classifier.
+analyze the email and return the following JSON format exactly.
 Return exactly:
 {
   "results": [
-    { "id": 1, "isPhishing": true, "confidence": 0.92, "reasons": ["short reason"] }
+    { "id": mailID, "isPhishing": true/false, "confidence": confidenceScore, "reasons": ["short reason"] }
   ]
 }
-Phishing indicators: credential theft, payment scams, spoofed brands/domains, urgency/threats, odd links/attachments,
+In the reasons give a detailed explanation of either why you flagged it as a phishing email or why it is a legitimate email
+it is important to give a thorough explanation of how you came to your conclusion.
+Some examples of phishing indicators are: credential theft, payment scams, spoofed brands/domains, urgency/threats, odd links/attachments,
 mismatched sender name vs address, typosquatting, requests to bypass official channels.
 `;
 
