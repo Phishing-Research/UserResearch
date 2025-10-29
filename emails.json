@@ -21,10 +21,10 @@
   },
   {
     "id": 3,
-    "sender": "PayPal",
+    "sender": "Venmo",
     "senderEmail": "venmo@venmo.com",
     "subject": "Payment Received",
-    "snippet": "You have received $200. Open your app and check you balence for details on the transaction.",
+    "snippet": "You have received $200. Open your app and check you balance for details on the transaction.",
     "time": "10:00 AM",
     "attachment": null,
     "isPhishing": false
@@ -167,6 +167,6 @@
     "snippet": "We have been having issues with our data in the employee acccounts. \nPlease get back yo us with your updated address for the year so that we may have the correct info going foward..",
     "time": "10:43 AM",
     "attachment": null,
-    "isPhishing": false
+    "isPhishing": true
   }
 ]
