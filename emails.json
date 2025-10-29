@@ -168,5 +168,16 @@
     "time": "10:43 AM",
     "attachment": null,
     "isPhishing": true
+  },
+  {
+    "id": 18,
+    "sender": "Payroll Department",
+    "senderEmail": "payroll@company.com",
+    "subject": "Your October Payslip is Ready - Immediate Action Required",
+    "snippet": "Hi John Doe, your payslip for October is ready. Please head to the company payroll app to check your payslip — if you do not update your details your payment may be delayed.",
+    "time": "09:00 AM",
+    "attachment": "Payslip_Oct2025.pdf",
+    "isPhishing": false
   }
+  
 ]
