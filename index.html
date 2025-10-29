@@ -60,33 +60,33 @@
   </style>
 </head>
 <body>
-  <div class="container">
-    <h1>Welcome to Your Mailbox</h1>
+<div class="container">
+  <h1>Welcome to Your Mailbox</h1>
 
-    <h2>How To</h2>
-    <p>In this activity, you will manage your inbox and track phishing emails. Follow these steps:</p>
-    <ul>
-      <li>Open the inbox by clicking the button below.</li>
-      <li>Each email starts as <strong style="color: blue;">unread</strong> (sender name is blue).</li>
-      <li>Click on an email to read it; it will automatically be marked as <strong style="color: blue;">read</strong>.</li>
-      <li>Move suspicious emails to <strong style="color: red;">Trash</strong> to indicate they are phishing.</li>
-      <li>You can also move emails to <strong style="color: yellow;">Read Later</strong> if needed.</li>
-      <li>Once all emails are read, a <strong style="color: purple;">Done</strong> button will appear at the top.</li>
-      <li>Click <strong style="color: purple;">Done</strong> to stop the timer and view your results.</li>
-    </ul>
+  <h2>How To</h2>
+  <p>In this activity, you will manage your inbox and track phishing emails. Follow these steps:</p>
+  <ul>
+    <li>Open the inbox by clicking the button below.</li>
+    <li>Each email starts as <strong style="color: blue;">unread</strong> (sender name is blue).</li>
+    <li>Click on an email to read it; it will automatically be marked as <strong style="color: blue;">read</strong>.</li>
+    <li>Move suspicious emails to <strong style="color: red;">Trash</strong> to indicate they are phishing.</li>
+    <li>You can also move emails to <strong style="color: yellow;">Read Later</strong> if needed.</li>
+    <li>Once all emails are read, a <strong style="color: purple;">Done</strong> button will appear at the top.</li>
+    <li>Click <strong style="color: purple;">Done</strong> to stop the timer and view your results.</li>
+  </ul>
 
-    <p>Click the button below to open your mailbox and start the timer.</p>
+  <p>Click the button below to open your mailbox and start the timer.</p>
 
-    <button class="open-btn" id="openInboxBtn">Open Inbox</button>
-  </div>
+  <button class="open-btn" id="openInboxBtn">Open Inbox</button>
+</div>
 
-  <script>
-    document.getElementById("openInboxBtn").addEventListener("click", () => {
-      // Store the start time in localStorage
-      localStorage.setItem("startTime", Date.now());
-      // Redirect to inbox
-      window.location.href = "inbox.html";
-    });
-  </script>
+<script>
+  document.getElementById("openInboxBtn").addEventListener("click", () => {
+    // Store the start time in localStorage
+    localStorage.setItem("startTime", Date.now());
+    // Redirect to inbox
+    window.location.href = "inbox.html";
+  });
+</script>
 </body>
 </html>

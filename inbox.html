@@ -7,258 +7,301 @@
   <link rel="stylesheet" href="styles.css">
 
   <title>Inbox</title>
+  <style>
+    /* Optional minimal styles for AI badge (safe to remove if you have styles.css covered) */
+    .ai-badge { font-size: 0.85rem; padding: 2px 6px; border-radius: 999px; background: #eee; }
+    .ai-badge--pending { background: #ddd; }
+    .sender.unread { color: blue; font-weight: 600; }
+    header { display: flex; align-items: center; gap: 12px; }
+    header h1 { margin-right: auto; }
+    #aiScanBtn { padding: 6px 12px; cursor: pointer; }
+    #doneBtn { margin-right: 10px; padding: 5px 15px; font-size: 1rem; cursor: pointer; }
+  </style>
 </head>
 <body>
-  <header>
-    <h1>Inbox</h1>
-    <div>johnDoe@email.com</div>
-  </header>
+<header>
+  <h1>Inbox</h1>
+  <div>johnDoe@email.com</div>
+  <button id="aiScanBtn">Scan with AI</button>
+</header>
 
-  <div class="sidebar">
-    <button>Compose</button>
-    <ul>
-      <li data-folder="inbox"><strong>Inbox</strong></li>
-      <li data-folder="readlater">Read Later</li>
-      <li data-folder="trash">Trash</li>
-    </ul>
+<div class="sidebar">
+  <button>Compose</button>
+  <ul>
+    <li data-folder="inbox"><strong>Inbox</strong></li>
+    <li data-folder="readlater">Read Later</li>
+    <li data-folder="trash">Trash</li>
+  </ul>
+</div>
+
+<div class="main">
+  <div class="inbox" id="inbox"></div>
+  <div class="reading-pane" id="readingPane">
+    <p>Select an email to read</p>
   </div>
+</div>
 
-  <div class="main">
-    <div class="inbox" id="inbox"></div>
-    <div class="reading-pane" id="readingPane">
-      <p>Select an email to read</p>
-    </div>
-  </div>
+<script>
+  let timerInterval;
+  let emailsData = { inbox: [], readlater: [], trash: [] };
+  let currentFolder = "inbox";
 
-  <script>
-    let timerInterval;
-    let emailsData = { inbox: [], readlater: [], trash: [] };
-    let currentFolder = "inbox";
-  
-    // --- Stopwatch ---
-    function startStopwatch() {
-      const header = document.querySelector("header");
-      const stopwatchDisplay = document.createElement("div");
-      stopwatchDisplay.id = "stopwatch";
-      stopwatchDisplay.style.marginTop = "5px";
-      header.appendChild(stopwatchDisplay);
-  
-      const startTime = localStorage.getItem("startTime");
-      if (!startTime) return;
-  
-      timerInterval = setInterval(() => {
-        const now = Date.now();
-        const elapsed = now - startTime;
-        const seconds = Math.floor((elapsed / 1000) % 60);
-        const minutes = Math.floor((elapsed / (1000 * 60)) % 60);
-        const hours = Math.floor((elapsed / (1000 * 60 * 60)));
-  
-        stopwatchDisplay.textContent =
-          `${hours > 0 ? hours + ":" : ""}${minutes}:${seconds.toString().padStart(2, "0")}`;
-      }, 1000);
+  // --- Stopwatch ---
+  function startStopwatch() {
+    const header = document.querySelector("header");
+    const stopwatchDisplay = document.createElement("div");
+    stopwatchDisplay.id = "stopwatch";
+    stopwatchDisplay.style.marginTop = "5px";
+    header.appendChild(stopwatchDisplay);
+
+    const startTime = localStorage.getItem("startTime");
+    if (!startTime) return;
+
+    timerInterval = setInterval(() => {
+      const now = Date.now();
+      const elapsed = now - startTime;
+      const seconds = Math.floor((elapsed / 1000) % 60);
+      const minutes = Math.floor((elapsed / (1000 * 60)) % 60);
+      const hours = Math.floor((elapsed / (1000 * 60 * 60)));
+
+      stopwatchDisplay.textContent =
+              `${hours > 0 ? hours + ":" : ""}${minutes.toString().padStart(2,"0")}:${seconds.toString().padStart(2, "0")}`;
+    }, 1000);
+  }
+
+  function stopStopwatch() {
+    clearInterval(timerInterval);
+    const stopwatchDisplay = document.getElementById("stopwatch");
+    if (stopwatchDisplay) {
+      const stopTime = Date.now();
+      localStorage.setItem("stopTime", stopTime);
+
+      const elapsed = stopTime - localStorage.getItem("startTime");
+      const seconds = Math.floor((elapsed / 1000) % 60);
+      const minutes = Math.floor((elapsed / (1000 * 60)) % 60);
+      const hours = Math.floor((elapsed / (1000 * 60 * 60)));
+
+      stopwatchDisplay.textContent =
+              `Finished in ${hours > 0 ? hours + "h " : ""}${minutes}m ${seconds}s`;
     }
-  
-    function stopStopwatch() {
-      clearInterval(timerInterval);
-      const stopwatchDisplay = document.getElementById("stopwatch");
-      if (stopwatchDisplay) {
-        const stopTime = Date.now();
-        localStorage.setItem("stopTime", stopTime);
-  
-        const elapsed = stopTime - localStorage.getItem("startTime");
-        const seconds = Math.floor((elapsed / 1000) % 60);
-        const minutes = Math.floor((elapsed / (1000 * 60)) % 60);
-        const hours = Math.floor((elapsed / (1000 * 60 * 60)));
-  
-        stopwatchDisplay.textContent =
-          `Finished in ${hours > 0 ? hours + "h " : ""}${minutes}m ${seconds}s`;
-      }
-    }
-  
-    // --- Check if all emails are read ---
-    function checkAllRead() {
-  const unread = emailsData.inbox.some(email => !email.read);
-  const header = document.querySelector("header");
-  let doneBtn = document.getElementById("doneBtn");
+  }
 
-  if (!unread) {
-    if (!doneBtn) {
-      // Create Done button in the header
-      doneBtn = document.createElement("button");
-      doneBtn.id = "doneBtn";
-      doneBtn.textContent = "Done";
-      doneBtn.style.marginRight = "10px";
-      doneBtn.style.padding = "5px 15px";
-      doneBtn.style.fontSize = "1rem";
-      doneBtn.style.cursor = "pointer";
+  // --- Check if all emails are read ---
+  function checkAllRead() {
+    const unread = emailsData.inbox.some(email => !email.read);
+    const header = document.querySelector("header");
+    let doneBtn = document.getElementById("doneBtn");
 
-      // Insert Done button before the stopwatch
-      const stopwatch = document.getElementById("stopwatch");
-      if (stopwatch) {
-        header.insertBefore(doneBtn, stopwatch);
-      } else {
-        header.appendChild(doneBtn);
-      }
+    if (!unread) {
+      if (!doneBtn) {
+        // Create Done button in the header
+        doneBtn = document.createElement("button");
+        doneBtn.id = "doneBtn";
+        doneBtn.textContent = "Done";
 
-      doneBtn.addEventListener("click", () => {
-        stopStopwatch();
-        calculatePhishingStats();
-        window.location.href = "results.html";
-        /*-----?possible code for function if we want it to email us the results?-------
+        // Insert Done button before the stopwatch
+        const stopwatch = document.getElementById("stopwatch");
+        if (stopwatch) {
+          header.insertBefore(doneBtn, stopwatch);
+        } else {
+          header.appendChild(doneBtn);
+        }
+
+        doneBtn.addEventListener("click", () => {
           stopStopwatch();
           calculatePhishingStats();
-
-          const phishingStats = JSON.parse(localStorage.getItem("phishingStats"));
-          const startTime = parseInt(localStorage.getItem("startTime"));
-          const stopTime = parseInt(localStorage.getItem("stopTime"));
-          const elapsed = stopTime - startTime;
-
-          // Prepare email content
-          const subject = encodeURIComponent("User Email Test Results");
-          const body = encodeURIComponent(
-            `Total Time: ${Math.floor(elapsed/1000)} seconds\n\n` +
-            `Phishing Detection Stats:\n` +
-            `True Positives: ${phishingStats.TP}\n` +
-            `True Negatives: ${phishingStats.TN}\n` +
-            `False Positives: ${phishingStats.FP}\n` +
-            `False Negatives: ${phishingStats.FN}\n` +
-            `Accuracy: ${((phishingStats.TP + phishingStats.TN) / 
-              (phishingStats.TP + phishingStats.TN + phishingStats.FP + phishingStats.FN) * 100).toFixed(1)}%`
-          );
-
-          // Open default email client
-          window.location.href = `mailto:youremail@example.com?subject=${subject}&body=${body}`;
-
-          // Redirect to results page after email client opens
-          setTimeout(() => {
-            window.location.href = "results.html";
-          }, 500);
-        */
-      });
+          window.location.href = "results.html";
+        });
+      }
+    } else if (doneBtn) {
+      doneBtn.remove();
     }
-  } else if (doneBtn) {
-    doneBtn.remove();
+
+    // Nested here on purpose to match your original structure
+    function calculatePhishingStats() {
+      const emails = emailsData.inbox.concat(emailsData.readlater, emailsData.trash);
+      let TP=0, TN=0, FP=0, FN=0;
+
+      emails.forEach(email => {
+        if (email.isPhishing && email.userMarkedPhishing) TP++;
+        else if (!email.isPhishing && email.userMarkedPhishing) FP++;
+        else if (email.isPhishing && !email.userMarkedPhishing) FN++;
+        else if (!email.isPhishing && !email.userMarkedPhishing) TN++;
+      });
+
+      localStorage.setItem("phishingStats", JSON.stringify({ TP, TN, FP, FN }));
+    }
   }
 
-  function calculatePhishingStats() {
-    const emails = emailsData.inbox.concat(emailsData.readlater, emailsData.trash);
-    let TP=0, TN=0, FP=0, FN=0;
+  // --- Render a folder ---
+  function renderFolder(folder) {
+    currentFolder = folder;
+    const inbox = document.getElementById("inbox");
+    const readingPane = document.getElementById("readingPane");
+    inbox.innerHTML = "";
+    readingPane.innerHTML = "<p>Select an email to read</p>";
 
-    emails.forEach(email => {
-      if (email.isPhishing && email.userMarkedPhishing) TP++;
-      else if (!email.isPhishing && email.userMarkedPhishing) FP++;
-      else if (email.isPhishing && !email.userMarkedPhishing) FN++;
-      else if (!email.isPhishing && !email.userMarkedPhishing) TN++;
-    });
+    emailsData[folder].forEach((email, index) => {
+      const row = document.createElement("div");
+      row.className = "email";
 
-    localStorage.setItem("phishingStats", JSON.stringify({ TP, TN, FP, FN }));
-  }
+      const senderText = email.sender + (email.senderEmail ? ` (${email.senderEmail})` : "");
+      const senderClass = email.read ? "" : "unread";
 
-}
+      const badge = email.aiFlag
+              ? `<span class="ai-badge" title="${email.aiFlag.isPhishing ? "AI: likely phishing" : "AI: likely legitimate"}">
+               ${email.aiFlag.isPhishing ? "⚠️ Phish" : "✅ Legit"}
+             </span>`
+              : `<span class="ai-badge ai-badge--pending" title="Not scanned">—</span>`;
 
-    // --- Render a folder ---
-function renderFolder(folder) {
-          
-      currentFolder = folder;
-      const inbox = document.getElementById("inbox");
-      const readingPane = document.getElementById("readingPane");
-      inbox.innerHTML = "";
-      readingPane.innerHTML = "<p>Select an email to read</p>";
-
-      emailsData[folder].forEach((email, index) => {
-        const row = document.createElement("div");
-        row.className = "email";
-
-        const senderText = email.sender + (email.senderEmail ? ` (${email.senderEmail})` : "");
-        const senderClass = email.read ? "" : "unread";
-
-        // Include a clickable row (checkbox optional)
-        row.innerHTML = `
-          <div class="sender ${senderClass}">${senderText}</div>
+      row.innerHTML = `
+          <div class="sender ${senderClass}">
+            ${badge}
+            <span style="margin-left:8px;">${senderText}</span>
+          </div>
           <div class="subject">${email.subject}</div>
           <div class="time">${email.time}</div>
         `;
 
-        row.addEventListener("click", () => openEmail(email, index));
-        inbox.appendChild(row);
-      });
+      row.addEventListener("click", () => openEmail(email, index));
+      inbox.appendChild(row);
+    });
+  }
+
+  // Open email in reading pane
+  function openEmail(email, index) {
+    email.read = true; // mark as read
+
+    // Update the sender class in the inbox list
+    const inbox = document.getElementById("inbox");
+    const emailRow = inbox.children[index];
+    if (emailRow) {
+      const senderDiv = emailRow.querySelector(".sender");
+      if (senderDiv) senderDiv.classList.remove("unread");
     }
 
-// Open email in reading pane
-function openEmail(email, index) {
-  email.read = true; // mark as read
+    checkAllRead();
 
-  // Update the sender class in the inbox list
-  const inbox = document.getElementById("inbox");
-  const emailRow = inbox.children[index];
-  if (emailRow) {
-    const senderDiv = emailRow.querySelector(".sender");
-    if (senderDiv) senderDiv.classList.remove("unread");
-  }
-
-  checkAllRead();
-
-  const readingPane = document.getElementById("readingPane");
-  readingPane.innerHTML = `
-    <div style="display:flex; justify-content:flex-end; gap:10px; margin-bottom:15px;">
-      <button id="readLaterBtn">📥 Read Later</button>
-      <button id="trashBtn">🗑️ Trash</button>
-    </div>
-    <h2>${email.subject}</h2>
-    <div class="meta">From: ${email.sender} ${email.senderEmail ? `(${email.senderEmail})` : ""} | ${email.time}</div>
-    <p>${email.snippet}</p>
-    ${email.attachment ? `<p><strong>Attachment:</strong> ${email.attachment}</p>` : ""}
-  `;
-  
-  document.getElementById("readLaterBtn").addEventListener("click", () => {
-    moveEmail(email, index, "readlater");
-  });
-  document.getElementById("trashBtn").addEventListener("click", () => {
-    email.userMarkedPhishing = true;
-    moveEmail(email, index, "trash");
-  });
-}
-
-// Move email to another folder and auto-select next
-function moveEmail(email, index, targetFolder) {
-  emailsData[currentFolder].splice(index, 1); // remove from current
-  emailsData[targetFolder].push(email);        // add to target
-
-  // Re-render folder
-  renderFolder(currentFolder);
-
-  // Auto-select next email if it exists
-  const nextEmail = emailsData[currentFolder][index] || emailsData[currentFolder][index - 1];
-  if (nextEmail) {
-    const nextIndex = emailsData[currentFolder].indexOf(nextEmail);
-    openEmail(nextEmail, nextIndex);
-  } else {
-    // No emails left
     const readingPane = document.getElementById("readingPane");
-    readingPane.innerHTML = "<p>Select an email to read</p>";
-  }
-}
+    readingPane.innerHTML = `
+        <div style="display:flex; justify-content:flex-end; gap:10px; margin-bottom:15px;">
+          <button id="readLaterBtn">📥 Read Later</button>
+          <button id="trashBtn">🗑️ Trash</button>
+        </div>
+        <h2>${email.subject}</h2>
+        <div class="meta">From: ${email.sender} ${email.senderEmail ? `(${email.senderEmail})` : ""} | ${email.time}</div>
+        <p>${email.snippet}</p>
+        ${email.attachment ? `<p><strong>Attachment:</strong> ${email.attachment}</p>` : ""}
+        ${email.aiFlag ? `
+          <div class="ai-analysis" style="margin-top:16px; padding:12px; border-radius:8px; background:#f7f7f9; color:#333;">
+            <strong>AI assessment:</strong>
+            <div>Verdict: ${email.aiFlag.isPhishing ? "Phishing ⚠️" : "Legitimate ✅"}</div>
+            <div>Confidence: ${(email.aiFlag.confidence * 100).toFixed(0)}%</div>
+            ${Array.isArray(email.aiFlag.reasons) && email.aiFlag.reasons.length ? `
+              <ul style="margin-top:8px;">
+                ${email.aiFlag.reasons.map(r => `<li>${r}</li>`).join("")}
+              </ul>` : ""
+    }
+            <div style="font-size:0.9rem; opacity:0.8; margin-top:6px;">Note: This is an assistant; you decide final action.</div>
+          </div>
+        ` : ""}
+      `;
 
-    // --- Load emails ---
-    fetch("emails.json")
-      .then(res => res.json())
-      .then(data => {
-        // Mark all as unread initially
-        emailsData.inbox = data.map(e => ({ ...e, read: false, userMarkedPhishing: false }));
-        renderFolder("inbox");
-        startStopwatch();
-      })
-      .catch(err => console.error("Error loading emails:", err));
-  
-    // --- Sidebar switching ---
-    document.querySelectorAll(".sidebar li").forEach(li => {
-      li.addEventListener("click", () => {
-        document.querySelectorAll(".sidebar li").forEach(el => el.innerHTML = el.textContent);
-        li.innerHTML = `<strong>${li.textContent}</strong>`;
-        renderFolder(li.dataset.folder);
-      });
+    document.getElementById("readLaterBtn").addEventListener("click", () => {
+      moveEmail(email, index, "readlater");
     });
-  </script>
-  
+    document.getElementById("trashBtn").addEventListener("click", () => {
+      email.userMarkedPhishing = true;
+      moveEmail(email, index, "trash");
+    });
+  }
+
+  // Move email to another folder and auto-select next
+  function moveEmail(email, index, targetFolder) {
+    emailsData[currentFolder].splice(index, 1); // remove from current
+    emailsData[targetFolder].push(email);        // add to target
+
+    // Re-render folder
+    renderFolder(currentFolder);
+
+    // Auto-select next email if it exists
+    const nextEmail = emailsData[currentFolder][index] || emailsData[currentFolder][index - 1];
+    if (nextEmail) {
+      const nextIndex = emailsData[currentFolder].indexOf(nextEmail);
+      openEmail(nextEmail, nextIndex);
+    } else {
+      // No emails left
+      const readingPane = document.getElementById("readingPane");
+      readingPane.innerHTML = "<p>Select an email to read</p>";
+    }
+  }
+
+  // --- Load emails ---
+  fetch("emails.json")
+          .then(res => res.json())
+          .then(data => {
+            // Mark all as unread initially and prep AI flag
+            emailsData.inbox = data.map(e => ({ ...e, read: false, userMarkedPhishing: false, aiFlag: null }));
+            renderFolder("inbox");
+            startStopwatch();
+          })
+          .catch(err => console.error("Error loading emails:", err));
+
+  // --- Sidebar switching ---
+  document.querySelectorAll(".sidebar li").forEach(li => {
+    li.addEventListener("click", () => {
+      document.querySelectorAll(".sidebar li").forEach(el => el.innerHTML = el.textContent);
+      li.innerHTML = `<strong>${li.textContent}</strong>`;
+      renderFolder(li.dataset.folder);
+    });
+  });
+
+  // --- AI Scan: call your local backend which calls Gemini ---
+  async function scanEmailsWithAI() {
+    const btn = document.getElementById("aiScanBtn");
+    btn.disabled = true;
+    const originalText = btn.textContent;
+    btn.textContent = "Scanning…";
+
+    try {
+      // Prepare minimal payload for the backend
+      const emails = emailsData.inbox.map(({ id, sender, senderEmail, subject, snippet }) => ({
+        id, sender, senderEmail: senderEmail || "", subject, snippet
+      }));
+
+      const resp = await fetch("http://localhost:8787/api/phishing", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ emails })
+      });
+
+      if (!resp.ok) {
+        const err = await resp.json().catch(() => ({}));
+        throw new Error(err.error || `HTTP ${resp.status}`);
+      }
+
+      const data = await resp.json();
+      // data.results: [{ id, isPhishing, confidence, reasons }]
+
+      const byId = new Map(data.results.map(r => [r.id, r]));
+      emailsData.inbox = emailsData.inbox.map(e => {
+        const r = byId.get(e.id);
+        return r ? { ...e, aiFlag: { isPhishing: !!r.isPhishing, confidence: +r.confidence || 0, reasons: r.reasons || [] } } : e;
+      });
+
+      // Re-render current folder to show badges
+      renderFolder(currentFolder);
+    } catch (e) {
+      console.error(e);
+      alert("AI scan failed. Check the server console and API key.");
+    } finally {
+      btn.disabled = false;
+      btn.textContent = originalText;
+    }
+  }
+
+  document.getElementById("aiScanBtn").addEventListener("click", scanEmailsWithAI);
+</script>
+
 </body>
 </html>

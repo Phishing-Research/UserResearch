@@ -26,10 +26,9 @@ body {
   }
 
   .sidebar {
-    width: 220px;
     background: #fff;
     border-right: 1px solid var(--boarderline);
-    padding: 15px;
+    padding: 25px;
     height: calc(100vh - 60px);
     float: left;
   }
