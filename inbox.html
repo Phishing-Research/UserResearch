@@ -45,6 +45,11 @@
   let timerInterval;
   let emailsData = { inbox: [], readlater: [], trash: [] };
   let currentFolder = "inbox";
+  const aiLevel = localStorage.getItem("aiLevel");
+  if(aiLevel == 0){
+    let btn = document.getElementById("aiScanBtn");
+    btn.disabled = true;
+  }
 
   // --- Stopwatch ---
   function startStopwatch() {
