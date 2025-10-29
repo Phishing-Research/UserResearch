@@ -58,23 +58,44 @@
   
     // Display phishing stats
     const stats = JSON.parse(localStorage.getItem("phishingStats"));
+    const incorrectEmails = JSON.parse(localStorage.getItem("incorrectEmails")) || [];
+    let html;
+
     if (stats) {
       const { TP, TN, FP, FN } = stats;
       //tp = true positive (correctly identified as phising)
       //tn = true negitive (correctly identified as legitment)
       //fp = false negitive (incorrectly identified as legitment)
       //fn = false negitive (incorrectly identified as legitment)
+
       const total = TP + TN + FP + FN;
       const accuracy = ((TP + TN) / total * 100).toFixed(1);
-      document.getElementById("phishingStats").innerHTML = `
-      <h2>Phishing Detection</h2>
-      <p>True Positives: ${TP}</p>
-      <p>True Negatives: ${TN}</p>
-      <p>False Positives: ${FP}</p>
-      <p>False Negatives: ${FN}</p>
+
+      // Build HTML
+      html = `
+        <h2>Phishing Detection</h2>
+        <p>True Positives : ${TP}</p>
+        <p>True Negatives : ${TN}</p>
+        <p>False Positives : ${FP}</p>
+        <p>False Negatives : ${FN}</p>
         <p><strong>Accuracy: ${accuracy}%</strong></p>
       `;
+        if (incorrectEmails.length > 0) {
+        html += `
+          <h3>Incorrectly Identified Emails:</h3>
+          <div style="background: rgba(255,255,255,0.15); padding: 10px; border-radius: 10px;">
+            ${incorrectEmails}
+          </div>
+        `;
+      } else {
+        html += `<p>🎉 All emails were correctly identified!</p>`;
+      }
+
     }
+    else{hmtl = `<h2>Error with Phishing Detection</h2>`}
+    document.getElementById("phishingStats").innerHTML = html;
+
+
   </script>
   </body>
 </html>

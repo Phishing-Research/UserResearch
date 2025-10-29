@@ -121,15 +121,23 @@
     function calculatePhishingStats() {
       const emails = emailsData.inbox.concat(emailsData.readlater, emailsData.trash);
       let TP=0, TN=0, FP=0, FN=0;
+      let incorrectEmails = "";
 
       emails.forEach(email => {
         if (email.isPhishing && email.userMarkedPhishing) TP++;
-        else if (!email.isPhishing && email.userMarkedPhishing) FP++;
-        else if (email.isPhishing && !email.userMarkedPhishing) FN++;
+        else if (!email.isPhishing && email.userMarkedPhishing){
+          FP++;
+          incorrectEmails+=email.id + " ";}
+        else if (email.isPhishing && !email.userMarkedPhishing){ 
+          FN++;
+          incorrectEmails+=email.id + ", ";
+        }
         else if (!email.isPhishing && !email.userMarkedPhishing) TN++;
       });
 
       localStorage.setItem("phishingStats", JSON.stringify({ TP, TN, FP, FN }));
+      localStorage.setItem("incorrectEmails", JSON.stringify(incorrectEmails));
+
     }
   }
 

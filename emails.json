@@ -2,9 +2,9 @@
   {
     "id": 1,
     "sender": "Amazon Support",
-    "senderEmail": "support@amazon.com",
+    "senderEmail": "support@amazom.com",
     "subject": "Verify Your Account",
-    "snippet": "Your account has been compromised. Please login immediately.",
+    "snippet": "Your account has been compromised. Please login immediately to rectify this. www.amazon.com/login-page",
     "time": "08:15 AM",
     "attachment": null,
     "isPhishing": true
@@ -22,12 +22,12 @@
   {
     "id": 3,
     "sender": "PayPal",
-    "senderEmail": "service@paypal.com",
+    "senderEmail": "venmo@venmo.com",
     "subject": "Payment Received",
-    "snippet": "You have received $200. Click to view details.",
+    "snippet": "You have received $200. Open your app and check you balence for details on the transaction.",
     "time": "10:00 AM",
     "attachment": null,
-    "isPhishing": true
+    "isPhishing": false
   },
   {
     "id": 4,
@@ -44,7 +44,7 @@
     "sender": "Netflix",
     "senderEmail": "support@netflix.com",
     "subject": "Account Suspended",
-    "snippet": "We detected unusual activity. Please login to restore access.",
+    "snippet": "We detected unusual activity. Please login to restore access before your acccount is suspended.",
     "time": "11:15 AM",
     "attachment": null,
     "isPhishing": true
@@ -52,7 +52,7 @@
   {
     "id": 6,
     "sender": "Alice Smith",
-    "senderEmail": "alice.smith@yahoo.com",
+    "senderEmail": "alicesmith@company.com",
     "subject": "Meeting Notes",
     "snippet": "Attached are the notes from today's meeting.",
     "time": "12:00 PM",
@@ -72,11 +72,11 @@
   {
     "id": 8,
     "sender": "Bob Johnson",
-    "senderEmail": "bob.johnson@gmail.com",
+    "senderEmail": "bobjohnson@company.com",
     "subject": "Project Update",
     "snippet": "Here is the latest update on the project deliverables.",
     "time": "01:30 PM",
-    "attachment": null,
+    "attachment": "Project-Alpha-copy.pdf",
     "isPhishing": false
   },
   {
@@ -111,6 +111,16 @@
   },
   {
     "id": 12,
+    "sender": "Apple",
+    "senderEmail": "support@apple.net",
+    "subject": "You won a phone!",
+    "snippet": "Thank you for being a valued costumer of Apple. You have the opertunity to recieve a new phone for your support! \n Please check the attatchment for any question on how to finish you application for the prize. ",
+    "time": "11:15 AM",
+    "attachment": "Flier.exe",
+    "isPhishing": true
+  },
+  {
+    "id": 13,
     "sender": "Emily Davis",
     "senderEmail": "emily.davis@gmail.com",
     "subject": "Happy Birthday!",
@@ -120,7 +130,7 @@
     "isPhishing": false
   },
   {
-    "id": 13,
+    "id": 14,
     "sender": "IRS",
     "senderEmail": "notice@irs.gov",
     "subject": "Tax Payment Required",
@@ -130,7 +140,7 @@
     "isPhishing": true
   },
   {
-    "id": 14,
+    "id": 15,
     "sender": "Marketing Team",
     "senderEmail": "marketing@company.com",
     "subject": "Monthly Newsletter",
@@ -140,7 +150,7 @@
     "isPhishing": false
   },
   {
-    "id": 15,
+    "id": 16,
     "sender": "UPS",
     "senderEmail": "tracking@ups.com",
     "subject": "Delivery Issue",
@@ -148,5 +158,15 @@
     "time": "05:45 PM",
     "attachment": null,
     "isPhishing": true
+  },
+  {
+    "id": 17,
+    "sender": "HR Department",
+    "senderEmail": "hr@compamy.com",
+    "subject": "Requestion up to date information",
+    "snippet": "We have been having issues with our data in the employee acccounts. \nPlease get back yo us with your updated address for the year so that we may have the correct info going foward..",
+    "time": "10:43 AM",
+    "attachment": null,
+    "isPhishing": false
   }
 ]
