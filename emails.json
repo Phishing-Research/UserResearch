@@ -21,7 +21,7 @@
   },
   {
     "id": 3,
-    "sender": "PayPal",
+    "sender": "Venmo",
     "senderEmail": "venmo@venmo.com",
     "subject": "Payment Received",
     "snippet": "You have received $200. Open your app and check you balance for details on the transaction.",
