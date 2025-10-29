@@ -58,6 +58,7 @@
   
     // Display phishing stats
     const stats = JSON.parse(localStorage.getItem("phishingStats"));
+    const ai = JSON.parse(localStorage.getItem("aiLevel"));
     const incorrectEmails = JSON.parse(localStorage.getItem("incorrectEmails")) || [];
     let html;
 
@@ -90,6 +91,10 @@
       } else {
         html += `<p>All emails were correctly identified!</p>`;
       }
+
+      const aiLevel = localStorage.getItem("aiLevel");
+      html += `<p>AI Level: ${ai}</p>`;
+      
 
     }
     else{hmtl = `<h2>Error with Phishing Detection</h2>`}
