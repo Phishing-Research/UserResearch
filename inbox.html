@@ -318,49 +318,78 @@
     }
   }
 */
+let scanQueue = [];
+let scanning = false;
 
-async function scanEmailWithAI(email) {
+// --- Queue Manager ---
+async function processScanQueue() {
+  if (scanning || scanQueue.length === 0) return;
+  scanning = true;
+
+  const email = scanQueue.shift();
   try {
-    // Prepare only the selected email payload
-    const payload = {
-      id: email.id,
-      sender: email.sender,
-      senderEmail: email.senderEmail || "",
-      subject: email.subject,
-      snippet: email.snippet
-    };
-
-    // Send just one email to your backend
-    const resp = await fetch("http://localhost:8787/api/phishing", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ emails: [payload] })
-    });
-
-    if (!resp.ok) {
-      const err = await resp.json().catch(() => ({}));
-      throw new Error(err.error || `HTTP ${resp.status}`);
-    }
-
-    const data = await resp.json();
-
-    // Expecting backend to return data.results: [{ id, isPhishing, confidence, reasons }]
-    if (data.results && data.results.length > 0) {
-      const result = data.results[0];
-      email.aiFlag = {
-        isPhishing: !!result.isPhishing,
-        confidence: +result.confidence || 0,
-        reasons: result.reasons || []
-      };
-    }
-
-    // Re-render the current email to show the badge/analysis
-    renderFolder(currentFolder);
-    const index = emailsData[currentFolder].findIndex(e => e.id === email.id);
-    if (index !== -1) openEmail(email, index);
-  } catch (e) {
-    console.error("AI scan failed:", e);
+    await performEmailScan(email);
+  } catch (err) {
+    console.error("Error scanning email:", err);
+  } finally {
+    scanning = false;
+    // Continue with next email in queue
+    if (scanQueue.length > 0) processScanQueue();
   }
+}
+
+// --- Low-level scan of a single email ---
+async function performEmailScan(email) {
+  // Skip if already scanned
+  if (email.aiFlag) return;
+
+  const payload = {
+    id: email.id,
+    sender: email.sender,
+    senderEmail: email.senderEmail || "",
+    subject: email.subject,
+    snippet: email.snippet
+  };
+
+  const resp = await fetch("http://localhost:8787/api/phishing", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ emails: [payload] })
+  });
+
+  if (!resp.ok) {
+    const err = await resp.json().catch(() => ({}));
+    throw new Error(err.error || `HTTP ${resp.status}`);
+  }
+
+  const data = await resp.json();
+  if (data.results && data.results.length > 0) {
+    const result = data.results[0];
+    email.aiFlag = {
+      isPhishing: !!result.isPhishing,
+      confidence: +result.confidence || 0,
+      reasons: result.reasons || []
+    };
+  }
+
+  // Update inbox + re-render
+  renderFolder(currentFolder);
+  const index = emailsData[currentFolder].findIndex(e => e.id === email.id);
+  if (index !== -1) openEmail(email, index);
+}
+
+// --- Called when a user opens an email ---
+function scanEmailWithAI(email) {
+  // Add selected email to the *front* of the queue
+  scanQueue = [email, ...scanQueue.filter(e => e.id !== email.id)];
+  processScanQueue();
+
+  // Also schedule background scans for all others (once)
+  const remaining = emailsData.inbox.filter(e => !e.aiFlag && e.id !== email.id);
+  remaining.forEach(e => {
+    if (!scanQueue.find(x => x.id === e.id)) scanQueue.push(e);
+  });
+  processScanQueue();
 }
 
 
