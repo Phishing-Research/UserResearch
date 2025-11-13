@@ -74,17 +74,22 @@
   
     // Display phishing stats
     const stats = JSON.parse(localStorage.getItem("phishingStats"));
+     // --- Get survey data ---
+    const surveyData = JSON.parse(localStorage.getItem("surveyData")) || {};
     const ai = JSON.parse(localStorage.getItem("aiLevel"));
     let incorrectEmailsRaw = localStorage.getItem("incorrectEmails");
     let incorrectEmails = [];
     try {
       incorrectEmails = JSON.parse(incorrectEmailsRaw);
       if (!Array.isArray(incorrectEmails)) {
-        incorrectEmails = String(incorrectEmails).split(",").map(e => e.trim()).filter(e => e);
+        incorrectEmails = String(incorrectEmails).split(/\D+/).map(e => e.trim()).filter(e => e);
       }
     } catch {
-      incorrectEmails = String(incorrectEmailsRaw || "").split(",").map(e => e.trim()).filter(e => e);
+      incorrectEmails = String(incorrectEmailsRaw || "").split(/\D+/).map(e => e.trim()).filter(e => e);
     }
+    // Convert to numbers, sort ascending
+    incorrectEmails = incorrectEmails.map(Number).filter(n => !isNaN(n)).sort((a, b) => a - b);
+
     let html;
 
     if (stats) {
@@ -131,6 +136,13 @@
 
       const body = encodeURIComponent(
         `Here are my phishing test results:\n\n` +
+        `=== Participant Information ===\n` +
+        `Gender: ${surveyData.gender ?? "N/A"}\n` +
+        `Age Range: ${surveyData.ageRange ?? "N/A"}\n` +
+        `Computer Knowledge: ${surveyData.compKnowledge ?? "N/A"} / 10\n` +
+        `Phishing/Scam Knowledge: ${surveyData.phishKnowledge ?? "N/A"} / 10\n\n` +
+
+        `=== Test Results ===\n` +
         `Total Time: ${document.getElementById("timeDisplay").textContent}\n\n` +
         `True Positives: ${stats?.TP ?? "N/A"}\n` +
         `True Negatives: ${stats?.TN ?? "N/A"}\n` +

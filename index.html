@@ -75,33 +75,14 @@
     <li>Click <strong style="color: rgb(227, 113, 227);">Done</strong> to view your results when you are confident in you awnsers.</li>
   </ul>
 
-  <p>Click the button below to open your mailbox and start the timer.</p>
+  <p>Click the button below to take a quick survey before we begin.</p>
 
-  <button class="open-btn" id="noaiBtn">No AI</button>
-  <button class="open-btn" id="saiBtn">Some AI</button>
-  <button class="open-btn" id="maiBtn">More AI</button>
+  <button class="open-btn" id="surveyBtn">Quick Survey</button>
 </div>
 
 <script>
-  document.getElementById("noaiBtn").addEventListener("click", () => {
-    // Store the start time in localStorage
-    localStorage.setItem("startTime", Date.now());
-    localStorage.setItem("aiLevel", 0);
-    // Redirect to inbox
-    window.location.href = "inbox.html";
-  });
-  document.getElementById("saiBtn").addEventListener("click", () => {
-    localStorage.setItem("startTime", Date.now());
-    localStorage.setItem("aiLevel", 1);
-    // Redirect to inbox
-    window.location.href = "inbox.html";
-  });
-  document.getElementById("maiBtn").addEventListener("click", () => {
-    localStorage.setItem("startTime", Date.now());
-    localStorage.setItem("aiLevel", 2);
-    // Redirect to inbox
-    window.location.href = "inbox.html";
-  });
-</script>
+  document.getElementById("surveyBtn").addEventListener("click", () => {
+      window.location.href = "survey.html";
+    });</script>
 </body>
 </html>
