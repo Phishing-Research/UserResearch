@@ -31,13 +31,29 @@
       font-size: 1.5rem;
       margin-bottom: 30px;
     }
+    button {
+      margin-top: 20px;
+      padding: 10px 25px;
+      border: none;
+      border-radius: 10px;
+      background-color: #ffca28;
+      color: #333;
+      font-size: 1rem;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    button:hover {
+      background-color: #ffd54f;
+    }
   </style>
 </head>
 <body>
     <div class="container">
-    <h1>Well Done!</h1>
+    <h1>Thank you for your time!</h1>
     <div class="time-display" id="timeDisplay">Calculating...</div>
     <div class="phishing-stats" id="phishingStats"></div>
+    <button id="sendEmailBtn">Send Results via Email</button>
   </div>
   
   <script>
@@ -58,8 +74,22 @@
   
     // Display phishing stats
     const stats = JSON.parse(localStorage.getItem("phishingStats"));
+     // --- Get survey data ---
+    const surveyData = JSON.parse(localStorage.getItem("surveyData")) || {};
     const ai = JSON.parse(localStorage.getItem("aiLevel"));
-    const incorrectEmails = JSON.parse(localStorage.getItem("incorrectEmails")) || [];
+    let incorrectEmailsRaw = localStorage.getItem("incorrectEmails");
+    let incorrectEmails = [];
+    try {
+      incorrectEmails = JSON.parse(incorrectEmailsRaw);
+      if (!Array.isArray(incorrectEmails)) {
+        incorrectEmails = String(incorrectEmails).split(/\D+/).map(e => e.trim()).filter(e => e);
+      }
+    } catch {
+      incorrectEmails = String(incorrectEmailsRaw || "").split(/\D+/).map(e => e.trim()).filter(e => e);
+    }
+    // Convert to numbers, sort ascending
+    incorrectEmails = incorrectEmails.map(Number).filter(n => !isNaN(n)).sort((a, b) => a - b);
+
     let html;
 
     if (stats) {
@@ -99,7 +129,35 @@
     }
     else{hmtl = `<h2>Error with Phishing Detection</h2>`}
     document.getElementById("phishingStats").innerHTML = html;
+     // --- Send email button ---
+     document.getElementById("sendEmailBtn").addEventListener("click", () => {
+      const recipient = "awaltz3@kent.edu"; // ← change this to where you want the results sent
+      const subject = encodeURIComponent("PTR: Phishing Test Results");
 
+      const body = encodeURIComponent(
+        `Here are my phishing test results:\n\n` +
+        `=== Participant Information ===\n` +
+        `Gender: ${surveyData.gender ?? "N/A"}\n` +
+        `Age Range: ${surveyData.ageRange ?? "N/A"}\n` +
+        `Computer Knowledge: ${surveyData.compKnowledge ?? "N/A"} / 10\n` +
+        `Phishing/Scam Knowledge: ${surveyData.phishKnowledge ?? "N/A"} / 10\n\n` +
+
+        `=== Test Results ===\n` +
+        `Total Time: ${document.getElementById("timeDisplay").textContent}\n\n` +
+        `True Positives: ${stats?.TP ?? "N/A"}\n` +
+        `True Negatives: ${stats?.TN ?? "N/A"}\n` +
+        `False Positives: ${stats?.FP ?? "N/A"}\n` +
+        `False Negatives: ${stats?.FN ?? "N/A"}\n` +
+        `Accuracy: ${((stats?.TP + stats?.TN) / (stats?.TP + stats?.TN + stats?.FP + stats?.FN) * 100).toFixed(1) ?? "N/A"}%\n` +
+        `AI Level: ${ai}\n\n` +
+        (incorrectEmails.length > 0
+          ? `Incorrectly Identified Emails: ${incorrectEmails.join(", ")}`
+          : `All emails were correctly identified!`)
+      );
+
+      // Open mail client
+      window.location.href = `mailto:${recipient}?subject=${subject}&body=${body}`;
+    });
 
   </script>
   </body>

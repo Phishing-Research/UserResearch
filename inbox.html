@@ -14,7 +14,6 @@
     .sender.unread { color: blue; font-weight: 600; }
     header { display: flex; align-items: center; gap: 12px; }
     header h1 { margin-right: auto; }
-    #aiScanBtn { padding: 6px 12px; cursor: pointer; }
     #doneBtn { margin-right: 10px; padding: 5px 15px; font-size: 1rem; cursor: pointer; }
   </style>
 </head>
@@ -22,7 +21,6 @@
 <header>
   <h1>Inbox</h1>
   <div>johnDoe@email.com</div>
-  <button id="aiScanBtn">Scan with AI</button>
 </header>
 
 <div class="sidebar">
@@ -46,10 +44,7 @@
   let emailsData = { inbox: [], readlater: [], trash: [] };
   let currentFolder = "inbox";
   const aiLevel = localStorage.getItem("aiLevel");
-  if(aiLevel == 0){
-    let btn = document.getElementById("aiScanBtn");
-    btn.disabled = true;
-  }
+
 
   // --- Stopwatch ---
   function startStopwatch() {
@@ -184,6 +179,8 @@
   // Open email in reading pane
   function openEmail(email, index) {
     email.read = true; // mark as read
+    if(aiLevel!=0) 
+      scanEmailWithAI(email); /////////////////////////////////////////////////////////
 
     // Update the sender class in the inbox list
     const inbox = document.getElementById("inbox");
@@ -203,21 +200,35 @@
         </div>
         <h2>${email.subject}</h2>
         <div class="meta">From: ${email.sender} ${email.senderEmail ? `(${email.senderEmail})` : ""} | ${email.time}</div>
-        <p>${email.snippet}</p>
-        ${email.attachment ? `<p><strong>Attachment:</strong> ${email.attachment}</p>` : ""}
-        ${email.aiFlag ? `
-          <div class="ai-analysis" style="margin-top:16px; padding:12px; border-radius:8px; background:#f7f7f9; color:#333;">
+
+        ${email.aiFlag && aiLevel==2 ? `
+          <div class="ai-analysis" style="margin-top:16px; padding:12px; border-radius:8px; background:#a2a2a2; color:#333;">
             <strong>AI assessment:</strong>
             <div>Verdict: ${email.aiFlag.isPhishing ? "Phishing ⚠️" : "Legitimate ✅"}</div>
+
             <div>Confidence: ${(email.aiFlag.confidence * 100).toFixed(0)}%</div>
             ${Array.isArray(email.aiFlag.reasons) && email.aiFlag.reasons.length ? `
               <ul style="margin-top:8px;">
                 ${email.aiFlag.reasons.map(r => `<li>${r}</li>`).join("")}
               </ul>` : ""
-    }
+            } 
+
             <div style="font-size:0.9rem; opacity:0.8; margin-top:6px;">Note: This is an assistant; you decide final action.</div>
           </div>
-        ` : ""}
+        ` : ""
+        }
+        ${email.aiFlag && aiLevel==1 ? `
+          <div class="ai-analysis" style="margin-top:16px; padding:12px; border-radius:8px; background:#a2a2a2; color:#333;">
+            <strong>AI assessment:</strong>
+            <div>Verdict: ${email.aiFlag.isPhishing ? "Phishing ⚠️" : "Legitimate ✅"}</div>
+
+            <div style="font-size:0.9rem; opacity:0.8; margin-top:6px;">Note: This is an assistant; you decide final action.</div>
+          </div>
+        ` : ""
+        }
+
+        <p>${email.snippet}</p>
+        ${email.attachment ? `<p><strong>Attachment:</strong> ${email.attachment}</p>` : ""}
       `;
 
     document.getElementById("readLaterBtn").addEventListener("click", () => {
@@ -251,14 +262,14 @@
 
   // --- Load emails ---
   fetch("emails.json")
-          .then(res => res.json())
-          .then(data => {
-            // Mark all as unread initially and prep AI flag
-            emailsData.inbox = data.map(e => ({ ...e, read: false, userMarkedPhishing: false, aiFlag: null }));
-            renderFolder("inbox");
-            startStopwatch();
-          })
-          .catch(err => console.error("Error loading emails:", err));
+    .then(res => res.json())
+    .then(data => {
+      // Mark all as unread initially and prep AI flag
+      emailsData.inbox = data.map(e => ({ ...e, read: false, userMarkedPhishing: false, aiFlag: null }));
+      renderFolder("inbox");
+      startStopwatch();
+    })
+    .catch(err => console.error("Error loading emails:", err));
 
   // --- Sidebar switching ---
   document.querySelectorAll(".sidebar li").forEach(li => {
@@ -270,11 +281,8 @@
   });
 
   // --- AI Scan: call your local backend which calls Gemini ---
+  /*
   async function scanEmailsWithAI() {
-    const btn = document.getElementById("aiScanBtn");
-    btn.disabled = true;
-    const originalText = btn.textContent;
-    btn.textContent = "Scanning…";
 
     try {
       // Prepare minimal payload for the backend
@@ -307,13 +315,56 @@
     } catch (e) {
       console.error(e);
       alert("AI scan failed. Check the server console and API key.");
-    } finally {
-      btn.disabled = false;
-      btn.textContent = originalText;
     }
   }
+*/
 
-  document.getElementById("aiScanBtn").addEventListener("click", scanEmailsWithAI);
+async function scanEmailWithAI(email) {
+  try {
+    // Prepare only the selected email payload
+    const payload = {
+      id: email.id,
+      sender: email.sender,
+      senderEmail: email.senderEmail || "",
+      subject: email.subject,
+      snippet: email.snippet
+    };
+
+    // Send just one email to your backend
+    const resp = await fetch("http://localhost:8787/api/phishing", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ emails: [payload] })
+    });
+
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => ({}));
+      throw new Error(err.error || `HTTP ${resp.status}`);
+    }
+
+    const data = await resp.json();
+
+    // Expecting backend to return data.results: [{ id, isPhishing, confidence, reasons }]
+    if (data.results && data.results.length > 0) {
+      const result = data.results[0];
+      email.aiFlag = {
+        isPhishing: !!result.isPhishing,
+        confidence: +result.confidence || 0,
+        reasons: result.reasons || []
+      };
+    }
+
+    // Re-render the current email to show the badge/analysis
+    renderFolder(currentFolder);
+    const index = emailsData[currentFolder].findIndex(e => e.id === email.id);
+    if (index !== -1) openEmail(email, index);
+  } catch (e) {
+    console.error("AI scan failed:", e);
+  }
+}
+
+
+
 </script>
 
 </body>
