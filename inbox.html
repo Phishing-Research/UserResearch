@@ -10,7 +10,7 @@
   <style>
     /* Optional minimal styles for AI badge (safe to remove if you have styles.css covered) */
     .ai-badge { font-size: 0.85rem; padding: 2px 6px; border-radius: 999px; background: #eee; }
-    .ai-badge--pending { background: #ddd; }
+    .ai-badge--pending { font-size: 0.85rem; padding: 2px 6px; border-radius: 999px; background: #ddd; }
     .sender.unread { color: blue; font-weight: 600; }
     header { display: flex; align-items: center; gap: 12px; }
     header h1 { margin-right: auto; }
@@ -43,8 +43,8 @@
   let timerInterval;
   let emailsData = { inbox: [], readlater: [], trash: [] };
   let currentFolder = "inbox";
-  const aiLevel = localStorage.getItem("aiLevel");
-
+  const aiLevel = Number(localStorage.getItem("aiLevel") || 0); // 0, 1, or 2
+  let currentOpenEmailId = null; // track which email is currently open
 
   // --- Stopwatch ---
   function startStopwatch() {
@@ -65,7 +65,7 @@
       const hours = Math.floor((elapsed / (1000 * 60 * 60)));
 
       stopwatchDisplay.textContent =
-              `${hours > 0 ? hours + ":" : ""}${minutes.toString().padStart(2,"0")}:${seconds.toString().padStart(2, "0")}`;
+              `${hours > 0 ? hours + ":" : ""}${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
     }, 1000);
   }
 
@@ -117,27 +117,24 @@
       doneBtn.remove();
     }
 
-    // Nested here on purpose to match your original structure
     function calculatePhishingStats() {
       const emails = emailsData.inbox.concat(emailsData.readlater, emailsData.trash);
-      let TP=0, TN=0, FP=0, FN=0;
+      let TP = 0, TN = 0, FP = 0, FN = 0;
       let incorrectEmails = "";
 
       emails.forEach(email => {
         if (email.isPhishing && email.userMarkedPhishing) TP++;
-        else if (!email.isPhishing && email.userMarkedPhishing){
+        else if (!email.isPhishing && email.userMarkedPhishing) {
           FP++;
-          incorrectEmails+=email.id + " ";}
-        else if (email.isPhishing && !email.userMarkedPhishing){ 
+          incorrectEmails += email.id + " ";
+        } else if (email.isPhishing && !email.userMarkedPhishing) {
           FN++;
-          incorrectEmails+=email.id + ", ";
-        }
-        else if (!email.isPhishing && !email.userMarkedPhishing) TN++;
+          incorrectEmails += email.id + ", ";
+        } else if (!email.isPhishing && !email.userMarkedPhishing) TN++;
       });
 
       localStorage.setItem("phishingStats", JSON.stringify({ TP, TN, FP, FN }));
       localStorage.setItem("incorrectEmails", JSON.stringify(incorrectEmails));
-
     }
   }
 
@@ -149,42 +146,47 @@
     inbox.innerHTML = "";
     readingPane.innerHTML = "<p>Select an email to read</p>";
 
-    emailsData[folder].forEach((email, index) => {
+    const list = emailsData[folder] || [];
+    list.forEach((email, index) => {
       const row = document.createElement("div");
       row.className = "email";
 
       const senderText = email.sender + (email.senderEmail ? ` (${email.senderEmail})` : "");
       const senderClass = email.read ? "" : "unread";
 
-      const badge = email.aiFlag
+      const badgeHtml = email.aiFlag
               ? `<span class="ai-badge" title="${email.aiFlag.isPhishing ? "AI: likely phishing" : "AI: likely legitimate"}">
-               ${email.aiFlag.isPhishing ? "⚠️ Phish" : "✅ Legit"}
-             </span>`
-              : `<span class="ai-badge ai-badge--pending" title="Not scanned">—</span>`;
+             ${email.aiFlag.isPhishing ? "⚠️ Phish" : "✅ Legit"}
+           </span>`
+              : `<span class="ai-badge--pending" title="Not scanned">—</span>`;
 
       row.innerHTML = `
-          <div class="sender ${senderClass}">
-            ${badge}
-            <span style="margin-left:8px;">${senderText}</span>
-          </div>
-          <div class="subject">${email.subject}</div>
-          <div class="time">${email.time}</div>
-        `;
+        <div class="sender ${senderClass}">
+          ${badgeHtml}
+          <span style="margin-left:8px;">${senderText}</span>
+        </div>
+        <div class="subject">${email.subject}</div>
+        <div class="time">${email.time}</div>
+      `;
 
       row.addEventListener("click", () => openEmail(email, index));
       inbox.appendChild(row);
     });
   }
 
-  // Open email in reading pane
+  // --- Open email in reading pane ---
   function openEmail(email, index) {
-    email.read = true; // mark as read
-    if(aiLevel!=0) 
-      scanEmailWithAI(email); /////////////////////////////////////////////////////////
+    email.read = true;
+    currentOpenEmailId = email.id; // remember which email is open
+
+    // Only scan if AI is enabled and this email has not been scanned yet
+    if (aiLevel !== 0 && !email.aiFlag) {
+      scanEmailWithAI(email);
+    }
 
     // Update the sender class in the inbox list
-    const inbox = document.getElementById("inbox");
-    const emailRow = inbox.children[index];
+    const inboxEl = document.getElementById("inbox");
+    const emailRow = inboxEl.children[index];
     if (emailRow) {
       const senderDiv = emailRow.querySelector(".sender");
       if (senderDiv) senderDiv.classList.remove("unread");
@@ -193,43 +195,53 @@
     checkAllRead();
 
     const readingPane = document.getElementById("readingPane");
-    readingPane.innerHTML = `
-        <div style="display:flex; justify-content:flex-end; gap:10px; margin-bottom:15px;">
-          <button id="readLaterBtn">📥 Read Later</button>
-          <button id="trashBtn">🗑️ Trash</button>
+    let html = `
+      <div style="display:flex; justify-content:flex-end; gap:10px; margin-bottom:15px;">
+        <button id="readLaterBtn">📥 Read Later</button>
+        <button id="trashBtn">🗑️ Trash</button>
+      </div>
+      <h2>${email.subject}</h2>
+      <div class="meta">
+        From: ${email.sender} ${email.senderEmail ? `(${email.senderEmail})` : ""} | ${email.time}
+      </div>
+    `;
+
+    if (email.aiFlag && aiLevel === 2) {
+      const reasonsHtml = Array.isArray(email.aiFlag.reasons) && email.aiFlag.reasons.length
+              ? `<ul style="margin-top:8px;">
+             ${email.aiFlag.reasons.map(r => `<li>${r}</li>`).join("")}
+           </ul>`
+              : "";
+
+      html += `
+        <div class="ai-analysis" style="margin-top:16px; padding:12px; border-radius:8px; background:#a2a2a2; color:#333;">
+          <strong>AI assessment:</strong>
+          <div>Verdict: ${email.aiFlag.isPhishing ? "Phishing ⚠️" : "Legitimate ✅"}</div>
+          <div>Confidence: ${(email.aiFlag.confidence * 100).toFixed(0)}%</div>
+          ${reasonsHtml}
+          <div style="font-size:0.9rem; opacity:0.8; margin-top:6px;">
+            Note: This is an assistant; you decide final action.
+          </div>
         </div>
-        <h2>${email.subject}</h2>
-        <div class="meta">From: ${email.sender} ${email.senderEmail ? `(${email.senderEmail})` : ""} | ${email.time}</div>
-
-        ${email.aiFlag && aiLevel==2 ? `
-          <div class="ai-analysis" style="margin-top:16px; padding:12px; border-radius:8px; background:#a2a2a2; color:#333;">
-            <strong>AI assessment:</strong>
-            <div>Verdict: ${email.aiFlag.isPhishing ? "Phishing ⚠️" : "Legitimate ✅"}</div>
-
-            <div>Confidence: ${(email.aiFlag.confidence * 100).toFixed(0)}%</div>
-            ${Array.isArray(email.aiFlag.reasons) && email.aiFlag.reasons.length ? `
-              <ul style="margin-top:8px;">
-                ${email.aiFlag.reasons.map(r => `<li>${r}</li>`).join("")}
-              </ul>` : ""
-            } 
-
-            <div style="font-size:0.9rem; opacity:0.8; margin-top:6px;">Note: This is an assistant; you decide final action.</div>
-          </div>
-        ` : ""
-        }
-        ${email.aiFlag && aiLevel==1 ? `
-          <div class="ai-analysis" style="margin-top:16px; padding:12px; border-radius:8px; background:#a2a2a2; color:#333;">
-            <strong>AI assessment:</strong>
-            <div>Verdict: ${email.aiFlag.isPhishing ? "Phishing ⚠️" : "Legitimate ✅"}</div>
-
-            <div style="font-size:0.9rem; opacity:0.8; margin-top:6px;">Note: This is an assistant; you decide final action.</div>
-          </div>
-        ` : ""
-        }
-
-        <p>${email.snippet}</p>
-        ${email.attachment ? `<p><strong>Attachment:</strong> ${email.attachment}</p>` : ""}
       `;
+    } else if (email.aiFlag && aiLevel === 1) {
+      html += `
+        <div class="ai-analysis" style="margin-top:16px; padding:12px; border-radius:8px; background:#a2a2a2; color:#333;">
+          <strong>AI assessment:</strong>
+          <div>Verdict: ${email.aiFlag.isPhishing ? "Phishing ⚠️" : "Legitimate ✅"}</div>
+          <div style="font-size:0.9rem; opacity:0.8; margin-top:6px;">
+            Note: This is an assistant; you decide final action.
+          </div>
+        </div>
+      `;
+    }
+
+    html += `<p>${email.snippet}</p>`;
+    if (email.attachment) {
+      html += `<p><strong>Attachment:</strong> ${email.attachment}</p>`;
+    }
+
+    readingPane.innerHTML = html;
 
     document.getElementById("readLaterBtn").addEventListener("click", () => {
       moveEmail(email, index, "readlater");
@@ -240,10 +252,10 @@
     });
   }
 
-  // Move email to another folder and auto-select next
+  // --- Move email to another folder and auto-select next ---
   function moveEmail(email, index, targetFolder) {
     emailsData[currentFolder].splice(index, 1); // remove from current
-    emailsData[targetFolder].push(email);        // add to target
+    emailsData[targetFolder].push(email);       // add to target
 
     // Re-render folder
     renderFolder(currentFolder);
@@ -254,46 +266,54 @@
       const nextIndex = emailsData[currentFolder].indexOf(nextEmail);
       openEmail(nextEmail, nextIndex);
     } else {
-      // No emails left
       const readingPane = document.getElementById("readingPane");
       readingPane.innerHTML = "<p>Select an email to read</p>";
+      currentOpenEmailId = null;
     }
   }
 
   // --- Load emails ---
   fetch("emails.json")
-    .then(res => res.json())
-    .then(data => {
-      // Mark all as unread initially and prep AI flag
-      emailsData.inbox = data.map(e => ({ ...e, read: false, userMarkedPhishing: false, aiFlag: null }));
-      renderFolder("inbox");
-      startStopwatch();
-    })
-    .catch(err => console.error("Error loading emails:", err));
+          .then(res => res.json())
+          .then(data => {
+            // Mark all as unread initially and prep AI flag
+            emailsData.inbox = data.map(e => ({
+              ...e,
+              read: false,
+              userMarkedPhishing: false,
+              aiFlag: null
+            }));
+            renderFolder("inbox");
+            startStopwatch();
+          })
+          .catch(err => console.error("Error loading emails:", err));
 
   // --- Sidebar switching ---
   document.querySelectorAll(".sidebar li").forEach(li => {
     li.addEventListener("click", () => {
-      document.querySelectorAll(".sidebar li").forEach(el => el.innerHTML = el.textContent);
+      document.querySelectorAll(".sidebar li").forEach(el => {
+        el.innerHTML = el.textContent;
+      });
       li.innerHTML = `<strong>${li.textContent}</strong>`;
       renderFolder(li.dataset.folder);
     });
   });
 
-  // --- AI Scan: call your local backend which calls Gemini ---
-  /*
-  async function scanEmailsWithAI() {
-
+  // --- AI Scan: single-email version hitting your API ---
+  async function scanEmailWithAI(email) {
     try {
-      // Prepare minimal payload for the backend
-      const emails = emailsData.inbox.map(({ id, sender, senderEmail, subject, snippet }) => ({
-        id, sender, senderEmail: senderEmail || "", subject, snippet
-      }));
+      const payload = {
+        id: email.id,
+        sender: email.sender,
+        senderEmail: email.senderEmail || "",
+        subject: email.subject,
+        snippet: email.snippet
+      };
 
-      const resp = await fetch("http://localhost:8787/api/phishing", {
+      const resp = await fetch("https://phish-api-mchw.onrender.com/api/phishing", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ emails })
+        body: JSON.stringify({ emails: [payload] })
       });
 
       if (!resp.ok) {
@@ -302,69 +322,33 @@
       }
 
       const data = await resp.json();
-      // data.results: [{ id, isPhishing, confidence, reasons }]
 
-      const byId = new Map(data.results.map(r => [r.id, r]));
-      emailsData.inbox = emailsData.inbox.map(e => {
-        const r = byId.get(e.id);
-        return r ? { ...e, aiFlag: { isPhishing: !!r.isPhishing, confidence: +r.confidence || 0, reasons: r.reasons || [] } } : e;
-      });
+      if (data.results && data.results.length > 0) {
+        const result = data.results[0];
+        email.aiFlag = {
+          isPhishing: !!result.isPhishing,
+          confidence: +result.confidence || 0,
+          reasons: result.reasons || []
+        };
+      }
 
-      // Re-render current folder to show badges
+      // Update badges in the list
       renderFolder(currentFolder);
+
+      // If this email is still supposed to be open, reopen it so AI info shows,
+      // and the user doesn't lose their place.
+      if (currentOpenEmailId === email.id) {
+        const list = emailsData[currentFolder] || [];
+        const idx = list.findIndex(e => e.id === email.id);
+        if (idx !== -1) {
+          openEmail(list[idx], idx);
+        }
+      }
+
     } catch (e) {
-      console.error(e);
-      alert("AI scan failed. Check the server console and API key.");
+      console.error("AI scan failed:", e);
     }
   }
-*/
-
-async function scanEmailWithAI(email) {
-  try {
-    // Prepare only the selected email payload
-    const payload = {
-      id: email.id,
-      sender: email.sender,
-      senderEmail: email.senderEmail || "",
-      subject: email.subject,
-      snippet: email.snippet
-    };
-
-    // Send just one email to your backend
-    const resp = await fetch("https://phish-api-mchw.onrender.com/api/phishing", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ emails: [payload] })
-    });
-
-    if (!resp.ok) {
-      const err = await resp.json().catch(() => ({}));
-      throw new Error(err.error || `HTTP ${resp.status}`);
-    }
-
-    const data = await resp.json();
-
-    // Expecting backend to return data.results: [{ id, isPhishing, confidence, reasons }]
-    if (data.results && data.results.length > 0) {
-      const result = data.results[0];
-      email.aiFlag = {
-        isPhishing: !!result.isPhishing,
-        confidence: +result.confidence || 0,
-        reasons: result.reasons || []
-      };
-    }
-
-    // Re-render the current email to show the badge/analysis
-    renderFolder(currentFolder);
-    const index = emailsData[currentFolder].findIndex(e => e.id === email.id);
-    if (index !== -1) openEmail(email, index);
-  } catch (e) {
-    console.error("AI scan failed:", e);
-  }
-}
-
-
-
 </script>
 
 </body>
