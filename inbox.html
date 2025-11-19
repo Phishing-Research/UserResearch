@@ -331,7 +331,7 @@ async function scanEmailWithAI(email) {
     };
 
     // Send just one email to your backend
-    const resp = await fetch("http://localhost:8787/api/phishing", {
+    const resp = await fetch("https://phish-api-mchw.onrender.com", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ emails: [payload] })
