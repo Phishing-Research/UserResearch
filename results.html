@@ -53,7 +53,19 @@
     <h1>Thank you for your time!</h1>
     <div class="time-display" id="timeDisplay">Calculating...</div>
     <div class="phishing-stats" id="phishingStats"></div>
-    <button id="sendEmailBtn">Send Results via Email</button>
+    <div>
+      <label for="emailClientSelect">Choose email client: </label>
+      <select id="emailClientSelect">
+        <option value="default">System Mail</option>
+        <option value="gmail">Gmail</option>
+        <option value="outlook">Outlook</option>
+        <option value="yahoo">Yahoo Mail</option>
+      </select>
+    </div>
+    <div>
+      <button id="sendEmailBtn">Send Results via Email</button>
+    </div>
+    
   </div>
   
   <script>
@@ -156,7 +168,23 @@
       );
 
       // Open mail client
-      window.location.href = `mailto:${recipient}?subject=${subject}&body=${body}`;
+      //window.location.href = `mailto:${recipient}?subject=${subject}&body=${body}`;
+
+      const client = document.getElementById("emailClientSelect").value;
+      let url = "";
+
+      if (client === "gmail") {
+        url = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(recipient)}&su=${subject}&body=${body}`;
+      } else if (client === "outlook") {
+        url = `https://outlook.office.com/mail/deeplink/compose?to=${encodeURIComponent(recipient)}&subject=${subject}&body=${body}`;
+      } else if (client === "yahoo") {
+        url = `https://compose.mail.yahoo.com/?to=${encodeURIComponent(recipient)}&subject=${subject}&body=${body}`;
+      } else {
+        url = `mailto:${recipient}?subject=${subject}&body=${body}`;
+      }
+
+      window.open(url, "_blank");
+
     });
 
   </script>
