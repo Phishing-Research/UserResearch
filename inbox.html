@@ -8,7 +8,6 @@
 
   <title>Inbox</title>
   <style>
-    /* Optional minimal styles for AI badge (safe to remove if you have styles.css covered) */
     .ai-badge { font-size: 0.85rem; padding: 2px 6px; border-radius: 999px; background: #eee; }
     .ai-badge--pending { font-size: 0.85rem; padding: 2px 6px; border-radius: 999px; background: #ddd; }
     .sender.unread { color: blue; font-weight: 600; }
@@ -43,8 +42,9 @@
   let timerInterval;
   let emailsData = { inbox: [], readlater: [], trash: [] };
   let currentFolder = "inbox";
-  const aiLevel = Number(localStorage.getItem("aiLevel") || 0); // 0, 1, or 2
-  let currentOpenEmailId = null; // track which email is currently open
+  const aiLevel = Number(localStorage.getItem("aiLevel") || 0);
+  let currentOpenEmailId = null;
+  let backgroundScanning = false;
 
   // --- Stopwatch ---
   function startStopwatch() {
@@ -94,12 +94,10 @@
 
     if (!unread) {
       if (!doneBtn) {
-        // Create Done button in the header
         doneBtn = document.createElement("button");
         doneBtn.id = "doneBtn";
         doneBtn.textContent = "Done";
 
-        // Insert Done button before the stopwatch
         const stopwatch = document.getElementById("stopwatch");
         if (stopwatch) {
           header.insertBefore(doneBtn, stopwatch);
@@ -138,13 +136,13 @@
     }
   }
 
-  // --- Render a folder ---
+  // --- Render folder ---
   function renderFolder(folder) {
     currentFolder = folder;
     const inbox = document.getElementById("inbox");
     const readingPane = document.getElementById("readingPane");
     inbox.innerHTML = "";
-    readingPane.innerHTML = "<p>Select an email to read</p>";
+    readingPane.innerHTML = currentOpenEmailId ? readingPane.innerHTML : "<p>Select an email to read</p>";
 
     const list = emailsData[folder] || [];
     list.forEach((email, index) => {
@@ -174,17 +172,15 @@
     });
   }
 
-  // --- Open email in reading pane ---
+  // --- Open email ---
   function openEmail(email, index) {
     email.read = true;
-    currentOpenEmailId = email.id; // remember which email is open
+    currentOpenEmailId = email.id;
 
-    // Only scan if AI is enabled and this email has not been scanned yet
     if (aiLevel !== 0 && !email.aiFlag) {
       scanEmailWithAI(email);
     }
 
-    // Update the sender class in the inbox list
     const inboxEl = document.getElementById("inbox");
     const emailRow = inboxEl.children[index];
     if (emailRow) {
@@ -206,7 +202,7 @@
       </div>
     `;
 
-    if (email.aiFlag && aiLevel === 2) {
+    if (email.aiFlag && aiLevel >= 1) {
       const reasonsHtml = Array.isArray(email.aiFlag.reasons) && email.aiFlag.reasons.length
               ? `<ul style="margin-top:8px;">
              ${email.aiFlag.reasons.map(r => `<li>${r}</li>`).join("")}
@@ -218,17 +214,7 @@
           <strong>AI assessment:</strong>
           <div>Verdict: ${email.aiFlag.isPhishing ? "Phishing ⚠️" : "Legitimate ✅"}</div>
           <div>Confidence: ${(email.aiFlag.confidence * 100).toFixed(0)}%</div>
-          ${reasonsHtml}
-          <div style="font-size:0.9rem; opacity:0.8; margin-top:6px;">
-            Note: This is an assistant; you decide final action.
-          </div>
-        </div>
-      `;
-    } else if (email.aiFlag && aiLevel === 1) {
-      html += `
-        <div class="ai-analysis" style="margin-top:16px; padding:12px; border-radius:8px; background:#a2a2a2; color:#333;">
-          <strong>AI assessment:</strong>
-          <div>Verdict: ${email.aiFlag.isPhishing ? "Phishing ⚠️" : "Legitimate ✅"}</div>
+          ${aiLevel === 2 ? reasonsHtml : ""}
           <div style="font-size:0.9rem; opacity:0.8; margin-top:6px;">
             Note: This is an assistant; you decide final action.
           </div>
@@ -252,15 +238,13 @@
     });
   }
 
-  // --- Move email to another folder and auto-select next ---
+  // --- Move email ---
   function moveEmail(email, index, targetFolder) {
-    emailsData[currentFolder].splice(index, 1); // remove from current
-    emailsData[targetFolder].push(email);       // add to target
+    emailsData[currentFolder].splice(index, 1);
+    emailsData[targetFolder].push(email);
 
-    // Re-render folder
     renderFolder(currentFolder);
 
-    // Auto-select next email if it exists
     const nextEmail = emailsData[currentFolder][index] || emailsData[currentFolder][index - 1];
     if (nextEmail) {
       const nextIndex = emailsData[currentFolder].indexOf(nextEmail);
@@ -276,7 +260,6 @@
   fetch("emails.json")
           .then(res => res.json())
           .then(data => {
-            // Mark all as unread initially and prep AI flag
             emailsData.inbox = data.map(e => ({
               ...e,
               read: false,
@@ -285,6 +268,7 @@
             }));
             renderFolder("inbox");
             startStopwatch();
+            backgroundScanLoop();
           })
           .catch(err => console.error("Error loading emails:", err));
 
@@ -299,7 +283,7 @@
     });
   });
 
-  // --- AI Scan: single-email version hitting your API ---
+  // --- AI scan ---
   async function scanEmailWithAI(email) {
     try {
       const payload = {
@@ -332,11 +316,8 @@
         };
       }
 
-      // Update badges in the list
       renderFolder(currentFolder);
 
-      // If this email is still supposed to be open, reopen it so AI info shows,
-      // and the user doesn't lose their place.
       if (currentOpenEmailId === email.id) {
         const list = emailsData[currentFolder] || [];
         const idx = list.findIndex(e => e.id === email.id);
@@ -349,6 +330,36 @@
       console.error("AI scan failed:", e);
     }
   }
+
+  // --- Background scanning ---
+  async function backgroundScanLoop() {
+    if (backgroundScanning) return;
+    backgroundScanning = true;
+
+    while (true) {
+      let target = null;
+
+      if (currentOpenEmailId) {
+        const list = emailsData[currentFolder];
+        target = list.find(e => e.id === currentOpenEmailId && !e.aiFlag);
+        if (target) {
+          await scanEmailWithAI(target);
+          continue;
+        }
+      }
+
+      const inboxList = emailsData.inbox;
+      target = inboxList.find(e => !e.aiFlag);
+
+      if (target) {
+        await scanEmailWithAI(target);
+        continue;
+      }
+
+      await new Promise(r => setTimeout(r, 2000));
+    }
+  }
+
 </script>
 
 </body>
