@@ -66,123 +66,98 @@
       background-color: #ffca28;
       color: #333;
     }
-    
-    .ai-btn {
-      display: none;
-      margin: 10px 5px;
-      padding: 12px 24px;
-      border: none;
-      border-radius: 10px;
-      background-color: #ffca28;
-      color: #333;
-      font-weight: bold;
-      cursor: pointer;
-      transition: background 0.3s;
-    }
-    .ai-btn:hover { background-color: #ffd54f; }
   </style>
 </head>
 <body>
-  <div class="survey-box">
-    <h1>Quick Survey</h1>
+<div class="survey-box">
+  <h1>Quick Survey</h1>
 
-    <h2>Gender</h2>
-    <select id="gender">
-      <option value="">-- Select --</option>
-      <option value="Female">Female</option>
-      <option value="Male">Male</option>
-      <option value="Nonbinary">Nonbinary</option>
-      <option value="Prefer not to say">Prefer not to say</option>
-    </select>
+  <h2>Gender</h2>
+  <select id="gender">
+    <option value="">-- Select --</option>
+    <option value="Female">Female</option>
+    <option value="Male">Male</option>
+    <option value="Nonbinary">Nonbinary</option>
+    <option value="Prefer not to say">Prefer not to say</option>
+  </select>
 
-    <h2>Age Range</h2>
-    <select id="ageRange">
-      <option value="">-- Select --</option>
-      <option value="18-25">18–25</option>
-      <option value="25-35">25–35</option>
-      <option value="35-45">35–45</option>
-      <option value="50+">50+</option>
-    </select>
+  <h2>Age Range</h2>
+  <select id="ageRange">
+    <option value="">-- Select --</option>
+    <option value="18-25">18–25</option>
+    <option value="25-35">25–35</option>
+    <option value="35-45">35–45</option>
+    <option value="50+">50+</option>
+  </select>
 
-    <h2>Level of Familiarity with Computers</h2>
-    <label>(1=never use, 10=use daily and for extended periods):</label>
-    <div class="rating-buttons" id="compKnowledge"></div>
+  <h2>Level of Familiarity with Computers</h2>
+  <label>(1=never use, 10=use daily and for extended periods):</label>
+  <div class="rating-buttons" id="compKnowledge"></div>
 
-    <h2>Level of Knowledge with Phishing & Scams</h2>
-    <label>(1=don't know what they are, 10= very knowledgeable in how and why they are made):</label>
-    <div class="rating-buttons" id="phishKnowledge"></div>
+  <h2>Level of Knowledge with Phishing & Scams</h2>
+  <label>(1=don't know what they are, 10= very knowledgeable in how and why they are made):</label>
+  <div class="rating-buttons" id="phishKnowledge"></div>
+</div>
 
-     <!-- AI Buttons -->
-     <div id="aiButtons">
-      <button class="ai-btn" id="noaiBtn">No AI</button>
-      <button class="ai-btn" id="saiBtn">Some AI</button>
-      <button class="ai-btn" id="maiBtn">More AI</button>
-    </div>
-  </div>
+<script>
+  const genderEl = document.getElementById("gender");
+  const ageEl = document.getElementById("ageRange");
+  const compDiv = document.getElementById("compKnowledge");
+  const phishDiv = document.getElementById("phishKnowledge");
 
-  <script>
-    const genderEl = document.getElementById("gender");
-    const ageEl = document.getElementById("ageRange");
-    const compDiv = document.getElementById("compKnowledge");
-    const phishDiv = document.getElementById("phishKnowledge");
-    const aiButtons = document.querySelectorAll(".ai-btn");
+  const surveyData = { gender: "", ageRange: "", compKnowledge: null, phishKnowledge: null };
+  let hasSubmitted = false;
 
-
-    // Create button groups for 1–10
-    function makeButtons(container, key) {
-      for (let i = 1; i <= 10; i++) {
-        const btn = document.createElement("button");
-        btn.textContent = i;
-        btn.addEventListener("click", () => {
-          [...container.children].forEach(b => b.classList.remove("selected"));
-          btn.classList.add("selected");
-          surveyData[key] = i;
-          checkCompletion();
-        });
-        container.appendChild(btn);
-      }
+  // Create button groups for 1–10
+  function makeButtons(container, key) {
+    for (let i = 1; i <= 10; i++) {
+      const btn = document.createElement("button");
+      btn.textContent = i;
+      btn.addEventListener("click", () => {
+        [...container.children].forEach(b => b.classList.remove("selected"));
+        btn.classList.add("selected");
+        surveyData[key] = i;
+        checkCompletion();
+      });
+      container.appendChild(btn);
     }
+  }
 
-    const surveyData = { gender: "", ageRange: "", compKnowledge: null, phishKnowledge: null };
-    makeButtons(compDiv, "compKnowledge");
-    makeButtons(phishDiv, "phishKnowledge");
+  makeButtons(compDiv, "compKnowledge");
+  makeButtons(phishDiv, "phishKnowledge");
 
-    genderEl.addEventListener("change", e => {
-      surveyData.gender = e.target.value;
-      checkCompletion();
-    });
-    ageEl.addEventListener("change", e => {
-      surveyData.ageRange = e.target.value;
-      checkCompletion();
-    });
+  genderEl.addEventListener("change", e => {
+    surveyData.gender = e.target.value;
+    checkCompletion();
+  });
 
-    function checkCompletion() {
-      const complete =
-        surveyData.gender &&
-        surveyData.ageRange &&
-        surveyData.compKnowledge &&
-        surveyData.phishKnowledge;
-      aiButtons.forEach(btn => { btn.style.display = complete ? "inline-block" : "none"; });
+  ageEl.addEventListener("change", e => {
+    surveyData.ageRange = e.target.value;
+    checkCompletion();
+  });
+
+  function checkCompletion() {
+    if (hasSubmitted) return;
+
+    const complete =
+            surveyData.gender &&
+            surveyData.ageRange &&
+            surveyData.compKnowledge &&
+            surveyData.phishKnowledge;
+
+    if (complete) {
+      hasSubmitted = true;
+
+      // Randomly choose AI level: 0 = No AI, 1 = Some AI, 2 = More AI
+      const aiLevel = Math.floor(Math.random() * 3);
+
+      localStorage.setItem("surveyData", JSON.stringify(surveyData));
+      localStorage.setItem("startTime", Date.now());
+      localStorage.setItem("aiLevel", aiLevel);
+
+      window.location.href = "inbox.html";
     }
-
-    document.getElementById("noaiBtn").addEventListener("click", () => {
-      localStorage.setItem("surveyData", JSON.stringify(surveyData));
-      localStorage.setItem("startTime", Date.now());
-      localStorage.setItem("aiLevel", 0);
-      window.location.href = "inbox.html";
-    });
-    document.getElementById("saiBtn").addEventListener("click", () => {
-      localStorage.setItem("surveyData", JSON.stringify(surveyData));
-      localStorage.setItem("startTime", Date.now());
-      localStorage.setItem("aiLevel", 1);
-      window.location.href = "inbox.html";
-    });
-    document.getElementById("maiBtn").addEventListener("click", () => {
-      localStorage.setItem("surveyData", JSON.stringify(surveyData));
-      localStorage.setItem("startTime", Date.now());
-      localStorage.setItem("aiLevel", 2);
-      window.location.href = "inbox.html";
-    });
-  </script>
+  }
+</script>
 </body>
 </html>
