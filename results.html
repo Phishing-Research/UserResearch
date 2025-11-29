@@ -67,8 +67,25 @@
     <button id="sendEmailBtn">Send Results via Email</button>
     <button id="sendTextBtn">Send Results via Text Message</button>
   </div>
+<div>
+  <p>
+    The following code gives you Karma that can be used to get free research participants at SurveySwap.io. <br/>
+    Will appear after you hit submit <br/>
+  </p>
+</div>
+<div id="rewardBlock" style="display:none;">
+  <p>
+    Go to: https://surveyswap.io/sr/8TX0-PNOI-6CRB <br/>
+    Or, alternatively, enter the code manually: 8TX0-PNOI-6CRB
+  </p>
+</div>
+
 
   <script>
+    function showRewardBlock() {
+    document.getElementById("rewardBlock").style.display = "block";
+  }
+
     // Display time
     const startTime = parseInt(localStorage.getItem("startTime"));
     const stopTime = parseInt(localStorage.getItem("stopTime"));
@@ -142,6 +159,7 @@
 
     // EMAIL BUTTON
     document.getElementById("sendEmailBtn").addEventListener("click", () => {
+      showRewardBlock();
       const recipient = "awaltz3@kent.edu, aleona19@kent.edu";
 
       const subject = encodeURIComponent("PTR: Phishing Test Results");
@@ -186,6 +204,7 @@
 
     // SMS BUTTON
     document.getElementById("sendTextBtn").addEventListener("click", () => {
+      showRewardBlock();
       const phoneNumber = "awaltz3@kent.edu";
 
       const smsBody =
