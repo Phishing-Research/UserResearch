@@ -142,9 +142,15 @@
     const inbox = document.getElementById("inbox");
     const readingPane = document.getElementById("readingPane");
     inbox.innerHTML = "";
-    readingPane.innerHTML = currentOpenEmailId ? readingPane.innerHTML : "<p>Select an email to read</p>";
 
     const list = emailsData[folder] || [];
+
+    // If the currently open email isn't in this folder anymore, clear the reading pane.
+    if (!list.some(email => email.id === currentOpenEmailId)) {
+      readingPane.innerHTML = "<p>Select an email to read</p>";
+      currentOpenEmailId = null;
+    }
+
     list.forEach((email, index) => {
       const row = document.createElement("div");
       row.className = "email";
@@ -230,29 +236,65 @@
     readingPane.innerHTML = html;
 
     document.getElementById("readLaterBtn").addEventListener("click", () => {
-      moveEmail(email, index, "readlater");
+      moveEmail(email, "readlater");
     });
     document.getElementById("trashBtn").addEventListener("click", () => {
       email.userMarkedPhishing = true;
-      moveEmail(email, index, "trash");
+      moveEmail(email, "trash");
     });
   }
 
-  // --- Move email ---
-  function moveEmail(email, index, targetFolder) {
-    emailsData[currentFolder].splice(index, 1);
+  // --- Move email (fixed) ---
+  function moveEmail(email, targetFolder) {
+    // Find which folder the email is currently in (by id, not by currentFolder/index)
+    const folders = Object.keys(emailsData);
+    let fromFolder = null;
+    let fromIndex = -1;
+
+    for (const folder of folders) {
+      const list = emailsData[folder];
+      const idx = list.findIndex(e => e.id === email.id);
+      if (idx !== -1) {
+        fromFolder = folder;
+        fromIndex = idx;
+        break;
+      }
+    }
+
+    if (!fromFolder) {
+      console.warn("moveEmail: email not found in any folder", email);
+      return;
+    }
+
+    // Remove from its current folder and push into target
+    emailsData[fromFolder].splice(fromIndex, 1);
     emailsData[targetFolder].push(email);
 
-    renderFolder(currentFolder);
+    if (currentFolder === fromFolder) {
+      // We are looking at the folder the email came from
+      renderFolder(fromFolder);
 
-    const nextEmail = emailsData[currentFolder][index] || emailsData[currentFolder][index - 1];
-    if (nextEmail) {
-      const nextIndex = emailsData[currentFolder].indexOf(nextEmail);
-      openEmail(nextEmail, nextIndex);
+      const list = emailsData[fromFolder];
+      const nextEmail = list[fromIndex] || list[fromIndex - 1];
+
+      if (nextEmail) {
+        const nextIndex = list.indexOf(nextEmail);
+        openEmail(nextEmail, nextIndex);
+      } else {
+        const readingPane = document.getElementById("readingPane");
+        readingPane.innerHTML = "<p>Select an email to read</p>";
+        currentOpenEmailId = null;
+      }
     } else {
-      const readingPane = document.getElementById("readingPane");
-      readingPane.innerHTML = "<p>Select an email to read</p>";
-      currentOpenEmailId = null;
+      // We moved an email from a folder we're not currently viewing.
+      // Just refresh the current folder and clear the pane if we just moved the open email.
+      renderFolder(currentFolder);
+
+      if (currentOpenEmailId === email.id) {
+        const readingPane = document.getElementById("readingPane");
+        readingPane.innerHTML = "<p>Select an email to read</p>";
+        currentOpenEmailId = null;
+      }
     }
   }
 
@@ -341,7 +383,7 @@
 
       if (currentOpenEmailId) {
         const list = emailsData[currentFolder];
-        target = list.find(e => e.id === currentOpenEmailId && !e.aiFlag);
+        target = list && list.find(e => e.id === currentOpenEmailId && !e.aiFlag);
         if (target) {
           await scanEmailWithAI(target);
           continue;
