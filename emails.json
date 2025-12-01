@@ -64,7 +64,7 @@
     "sender": "LinkedIn",
     "senderEmail": "security@linkedin.com",
     "subject": "Suspicious Login Attempt",
-    "snippet": "We noticed a login attempt from an unknown device. Please verify.",
+    "snippet": "We noticed a login attempt from an unknown device. Please verify here.",
     "time": "01:00 PM",
     "attachment": null,
     "isPhishing": true
